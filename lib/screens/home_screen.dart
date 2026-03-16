@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../services/theme_provider.dart';
 import 'input_screen.dart';
 import 'history_screen.dart';
 import 'camera_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final ThemeProvider themeProvider;
+
+  const HomeScreen({super.key, required this.themeProvider});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -36,7 +39,11 @@ class _HomeScreenState extends State<HomeScreen> {
       body: PageView(
         controller: _pageController,
         physics: const BouncingScrollPhysics(),
-        children: const [InputScreen(), HistoryScreen(), CameraScreen()],
+        children: [
+          const InputScreen(),
+          HistoryScreen(themeProvider: widget.themeProvider),
+          CameraScreen(pageController: _pageController),
+        ],
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(

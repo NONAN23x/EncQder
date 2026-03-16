@@ -5,23 +5,27 @@ class QrItem {
   final String id;
   final String data;
   final DateTime createdAt;
+  final String originType; // "generated" or "scanned"
 
   QrItem({
     required this.id,
     required this.data,
     required this.createdAt,
+    this.originType = 'generated', // Default for older items
   });
 
   Map<String, dynamic> toJson() => {
         'id': id,
         'data': data,
         'createdAt': createdAt.toIso8601String(),
+        'originType': originType,
       };
 
   factory QrItem.fromJson(Map<String, dynamic> json) => QrItem(
         id: json['id'],
         data: json['data'],
         createdAt: DateTime.parse(json['createdAt']),
+        originType: json['originType'] ?? 'generated', // Fallback for backward compatibility
       );
 }
 
@@ -54,7 +58,7 @@ class StorageService {
     }
   }
 
-  Future<void> saveItem(String data) async {
+  Future<void> saveItem(String data, {String originType = 'generated'}) async {
     final List<QrItem> currentHistory = await getHistory();
     
     // Check for duplicates to bring them to top
@@ -64,6 +68,7 @@ class StorageService {
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       data: data,
       createdAt: DateTime.now(),
+      originType: originType,
     );
 
     // Add to top of list

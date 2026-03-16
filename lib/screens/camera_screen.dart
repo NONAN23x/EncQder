@@ -1,10 +1,19 @@
+import 'dart:async';
+import 'dart:io';
+import 'dart:ui' as dart_ui;
+
 import 'package:flutter/material.dart';
+import 'package:gal/gal.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 import '../services/storage_service.dart';
 
 class CameraScreen extends StatefulWidget {
-  const CameraScreen({super.key});
+  final PageController? pageController; // Allow manual swipe fallback
+
+  const CameraScreen({super.key, this.pageController});
 
   @override
   State<CameraScreen> createState() => _CameraScreenState();
@@ -17,9 +26,38 @@ class _CameraScreenState extends State<CameraScreen> {
   );
 
   bool _isProcessing = false;
+  Timer? _idleTimer;
+  static const _idleTimeout = Duration(minutes: 2);
+
+  @override
+  void initState() {
+    super.initState();
+    _startIdleTimer();
+  }
+
+  void _startIdleTimer() {
+    _idleTimer?.cancel();
+    _idleTimer = Timer(_idleTimeout, () {
+      if (mounted && !_isProcessing) {
+         // Auto-redirect to home index if idle for 2 min saving battery
+         if (widget.pageController != null) {
+            widget.pageController!.animateToPage(
+              1, // History screen index
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+            );
+         }
+      }
+    });
+  }
+
+  void _resetIdleTimer() {
+    _startIdleTimer();
+  }
 
   @override
   void dispose() {
+    _idleTimer?.cancel();
     _scannerController.dispose();
     super.dispose();
   }
@@ -38,6 +76,51 @@ class _CameraScreenState extends State<CameraScreen> {
         // Show result overlay
         _showResultOverlay(barcode.rawValue!);
       }
+    }
+  }
+
+  Future<void> _generateAndSaveImageToGallery(String data) async {
+    try {
+      final qrValidationResult = QrValidator.validate(
+        data: data,
+        version: QrVersions.auto,
+        errorCorrectionLevel: QrErrorCorrectLevel.L,
+      );
+
+      if (qrValidationResult.status == QrValidationStatus.valid) {
+        final qrCode = qrValidationResult.qrCode!;
+        final painter = QrPainter.withQr(
+          qr: qrCode,
+          color: const Color(0xFF000000), // Default high-contrast dark
+          emptyColor: const Color(0xFFFFFFFF), // Force white background for gallery
+          gapless: true,
+        );
+
+        final picData = await painter.toImageData(
+            1024, format: dart_ui.ImageByteFormat.png);
+
+        if (picData != null) {
+          final tempDir = await getTemporaryDirectory();
+          final file = File('${tempDir.path}/encqder_${DateTime.now().millisecondsSinceEpoch}.jpg');
+          await file.writeAsBytes(picData.buffer.asUint8List());
+
+          // Check permissions
+          final access = await Gal.hasAccess();
+          if (!access) {
+            final request = await Gal.requestAccess();
+            if (!request) return; // User denied
+          }
+
+          await Gal.putImage(file.path, album: 'EncQder');
+          
+          // Cleanup temp
+          if (await file.exists()) {
+             await file.delete();
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Failed to save to gallery: $e');
     }
   }
 
@@ -98,12 +181,24 @@ class _CameraScreenState extends State<CameraScreen> {
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: () async {
-                  await StorageService().saveItem(rawData);
+                  // Show loading
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (context) => const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+
+                  await StorageService().saveItem(rawData, originType: 'scanned');
+                  await _generateAndSaveImageToGallery(rawData);
                   
                   if (!context.mounted) return;
+                  Navigator.pop(context); // Dismiss loading
+                  
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Saved to History!'),
+                      content: Text('Saved to History & Gallery!'),
                       behavior: SnackBarBehavior.floating,
                     ),
                   );
@@ -141,135 +236,209 @@ class _CameraScreenState extends State<CameraScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          MobileScanner(
-            controller: _scannerController,
-            onDetect: _handleBarcode,
-          ),
+    // Determine screen size for central cutout
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    
+    // We want a square cutout that takes up roughly 70% of the screen width
+    final cutoutSize = screenWidth * 0.7;
+    // Calculate the left and top offsets to center it
+    final cutoutLeft = (screenWidth - cutoutSize) / 2;
+    // Position it slightly above center vertically
+    final cutoutTop = (screenHeight - cutoutSize) / 2.5;
+    
+    final cutoutRect = Rect.fromLTWH(cutoutLeft, cutoutTop, cutoutSize, cutoutSize);
 
-          // Custom Overlay for scanning area
-          SafeArea(
-            child: Column(
-              children: [
-                AppBar(
-                  title: const Text(
-                    'Scan QR Code',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  backgroundColor: Colors.black.withValues(alpha: 0.3),
-                  elevation: 0,
-                  iconTheme: const IconThemeData(color: Colors.white),
-                ),
-                const Spacer(),
-                Container(
-                  width: 250,
-                  height: 250,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.white, width: 2),
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: Stack(
-                    children: [
-                      // Add corner indicators if desired
-                      Positioned(
-                        top: -2,
-                        left: -2,
-                        child: _buildCorner(isTopLeft: true),
-                      ),
-                      Positioned(
-                        top: -2,
-                        right: -2,
-                        child: _buildCorner(isTopLeft: false, isTopRight: true),
-                      ),
-                      Positioned(
-                        bottom: -2,
-                        left: -2,
-                        child: _buildCorner(isBottomLeft: true),
-                      ),
-                      Positioned(
-                        bottom: -2,
-                        right: -2,
-                        child: _buildCorner(isBottomRight: true),
-                      ),
-                    ],
-                  ),
-                ),
-                const Spacer(flex: 2),
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  color: Colors.black.withValues(alpha: 0.3),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      IconButton(
-                        color: Colors.white,
-                        iconSize: 32,
-                        icon: const Icon(Icons.flash_on),
-                        onPressed: () => _scannerController.toggleTorch(),
-                      ),
-                      const SizedBox(width: 32),
-                      IconButton(
-                        color: Colors.white,
-                        iconSize: 32,
-                        icon: const Icon(Icons.cameraswitch),
-                        onPressed: () => _scannerController.switchCamera(),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+    return Scaffold(
+      backgroundColor: Colors.black, // Deep black base
+      body: GestureDetector(
+        onTapDown: (_) => _resetIdleTimer(),
+        onPanDown: (_) => _resetIdleTimer(),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // 1. The actual Camera feed
+            MobileScanner(
+              controller: _scannerController,
+              onDetect: _handleBarcode,
             ),
-          ),
-        ],
+
+            // 2. The Dark Overlay with Transparent Center
+            CustomPaint(
+              painter: _ScannerOverlayPainter(
+                cutoutRect: cutoutRect,
+                overlayColor: Colors.black.withValues(alpha: 0.7), // Sleek semi-transparent black
+              ),
+            ),
+            
+            // 3. The Corner Brackets indicating the scan area
+            CustomPaint(
+               painter: _ScannerBracketsPainter(
+                 cutoutRect: cutoutRect,
+                 color: Colors.white,
+                 strokeWidth: 4.0,
+                 bracketLength: 30.0,
+                 radius: 12.0,
+               )
+            ),
+
+            // 4. Instructional Text
+            Positioned(
+              left: 0,
+              right: 0,
+              top: cutoutRect.bottom + 40,
+              child: const Text(
+                'Align QR code within the frame to scan',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+            
+            // 5. Warning indicator if scanning is paused (e.g. processing result)
+            if (_isProcessing)
+              Positioned.fill(
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.black87,
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 16, 
+                          height: 16, 
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)
+                        ),
+                        SizedBox(width: 12),
+                        Text('Processing...', style: TextStyle(color: Colors.white)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
+}
 
-  Widget _buildCorner({
-    bool isTopLeft = false,
-    bool isTopRight = false,
-    bool isBottomLeft = false,
-    bool isBottomRight = false,
-  }) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(
-            color: isTopLeft || isTopRight
-                ? Colors.greenAccent
-                : Colors.transparent,
-            width: 4,
-          ),
-          bottom: BorderSide(
-            color: isBottomLeft || isBottomRight
-                ? Colors.greenAccent
-                : Colors.transparent,
-            width: 4,
-          ),
-          left: BorderSide(
-            color: isTopLeft || isBottomLeft
-                ? Colors.greenAccent
-                : Colors.transparent,
-            width: 4,
-          ),
-          right: BorderSide(
-            color: isTopRight || isBottomRight
-                ? Colors.greenAccent
-                : Colors.transparent,
-            width: 4,
-          ),
-        ),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(isTopLeft ? 24 : 0),
-          topRight: Radius.circular(isTopRight ? 24 : 0),
-          bottomLeft: Radius.circular(isBottomLeft ? 24 : 0),
-          bottomRight: Radius.circular(isBottomRight ? 24 : 0),
-        ),
-      ),
+// Custom Painter to draw a semi-transparent dark overlay over the camera,
+// punching out a clear rectangular "window" in the middle.
+class _ScannerOverlayPainter extends CustomPainter {
+  final Rect cutoutRect;
+  final Color overlayColor;
+
+  _ScannerOverlayPainter({required this.cutoutRect, required this.overlayColor});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final backgroundPath = Path()
+      ..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
+      
+    final cutoutPath = Path()
+      ..addRRect(RRect.fromRectAndRadius(cutoutRect, const Radius.circular(16)));
+
+    // Subtract the cutout from the background
+    final finalPath = Path.combine(PathOperation.difference, backgroundPath, cutoutPath);
+
+    final paint = Paint()
+      ..color = overlayColor
+      ..style = PaintingStyle.fill;
+
+    canvas.drawPath(finalPath, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _ScannerOverlayPainter oldDelegate) {
+    return cutoutRect != oldDelegate.cutoutRect || overlayColor != oldDelegate.overlayColor;
+  }
+}
+
+// Custom Painter to draw only the elegant rounded corner brackets around the cutout
+class _ScannerBracketsPainter extends CustomPainter {
+  final Rect cutoutRect;
+  final Color color;
+  final double strokeWidth;
+  final double bracketLength;
+  final double radius;
+
+  _ScannerBracketsPainter({
+    required this.cutoutRect,
+    required this.color,
+    required this.strokeWidth,
+    required this.bracketLength,
+    required this.radius,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final path = Path();
+    
+    // Top Left
+    path.moveTo(cutoutRect.left, cutoutRect.top + bracketLength);
+    path.lineTo(cutoutRect.left, cutoutRect.top + radius);
+    path.arcToPoint(
+      Offset(cutoutRect.left + radius, cutoutRect.top),
+      radius: Radius.circular(radius),
+      clockwise: true,
     );
+    path.lineTo(cutoutRect.left + bracketLength, cutoutRect.top);
+
+    // Top Right
+    path.moveTo(cutoutRect.right - bracketLength, cutoutRect.top);
+    path.lineTo(cutoutRect.right - radius, cutoutRect.top);
+    path.arcToPoint(
+      Offset(cutoutRect.right, cutoutRect.top + radius),
+      radius: Radius.circular(radius),
+      clockwise: true,
+    );
+    path.lineTo(cutoutRect.right, cutoutRect.top + bracketLength);
+
+    // Bottom Left
+    path.moveTo(cutoutRect.left, cutoutRect.bottom - bracketLength);
+    path.lineTo(cutoutRect.left, cutoutRect.bottom - radius);
+    path.arcToPoint(
+      Offset(cutoutRect.left + radius, cutoutRect.bottom),
+      radius: Radius.circular(radius),
+      clockwise: false,
+    );
+    path.lineTo(cutoutRect.left + bracketLength, cutoutRect.bottom);
+
+    // Bottom Right
+    path.moveTo(cutoutRect.right - bracketLength, cutoutRect.bottom);
+    path.lineTo(cutoutRect.right - radius, cutoutRect.bottom);
+    path.arcToPoint(
+      Offset(cutoutRect.right, cutoutRect.bottom - radius),
+      radius: Radius.circular(radius),
+      clockwise: false,
+    );
+    path.lineTo(cutoutRect.right, cutoutRect.bottom - bracketLength);
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _ScannerBracketsPainter oldDelegate) {
+    return cutoutRect != oldDelegate.cutoutRect || 
+           color != oldDelegate.color ||
+           strokeWidth != oldDelegate.strokeWidth ||
+           bracketLength != oldDelegate.bracketLength ||
+           radius != oldDelegate.radius;
   }
 }

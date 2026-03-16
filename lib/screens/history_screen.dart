@@ -1,13 +1,22 @@
+import 'dart:io';
+import 'dart:ui' as dart_ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../services/storage_service.dart';
+import '../services/theme_provider.dart';
 import '../widgets/qr_display.dart';
+import 'settings_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
-  const HistoryScreen({super.key});
+  final ThemeProvider themeProvider;
+
+  const HistoryScreen({super.key, required this.themeProvider});
 
   @override
   State<HistoryScreen> createState() => _HistoryScreenState();
@@ -36,7 +45,25 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('EncQder History')),
+      appBar: AppBar(
+        title: const Text('EncQder History'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_rounded),
+            tooltip: 'Settings',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => SettingsScreen(
+                    themeProvider: widget.themeProvider,
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
       body: SafeArea(
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
@@ -121,18 +148,50 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     ).colorScheme.onSurface.withValues(alpha: 0.1),
                   ),
                 ),
-                child: const Center(child: Icon(Icons.qr_code)),
+                child: Center(
+                  child: Icon(
+                    item.originType == 'scanned'
+                        ? Icons.qr_code_scanner_rounded
+                        : Icons.qr_code_rounded,
+                  ),
+                ),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      item.data,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            item.data,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: item.originType == 'scanned' 
+                                ? Colors.blue.withValues(alpha: 0.1)
+                                : Colors.green.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            item.originType.toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              color: item.originType == 'scanned' 
+                                  ? Colors.blue
+                                  : Colors.green,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -146,6 +205,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
               const Icon(Icons.chevron_right, color: Colors.grey),
             ],
           ),
@@ -204,8 +264,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       color: Theme.of(context).cardTheme.color,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: Theme.of(context).cardTheme.shape is RoundedRectangleBorder
-                            ? (Theme.of(context).cardTheme.shape as RoundedRectangleBorder).side.color
+                        color:
+                            Theme.of(context).cardTheme.shape
+                                is RoundedRectangleBorder
+                            ? (Theme.of(context).cardTheme.shape
+                                      as RoundedRectangleBorder)
+                                  .side
+                                  .color
                             : Colors.transparent,
                       ),
                     ),
@@ -239,8 +304,70 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () {
-                        Share.share(item.data);
+                      onPressed: () async {
+                        try {
+                          // Show loading indicator
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (context) => const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
+
+                          // Generate image
+                          final qrValidationResult = QrValidator.validate(
+                            data: item.data,
+                            version: QrVersions.auto,
+                            errorCorrectionLevel: QrErrorCorrectLevel.L,
+                          );
+
+                          if (qrValidationResult.status == QrValidationStatus.valid) {
+                            final qrCode = qrValidationResult.qrCode!;
+                            final painter = QrPainter.withQr(
+                              qr: qrCode,
+                              color: const Color(0xFF000000), // Always black on white for sharing
+                              gapless: true,
+                            );
+
+                            // We render a high res version based on the module count
+                            // Higher resolution = better quality when shared
+                            final picData = await painter.toImageData(
+                                1024, format: dart_ui.ImageByteFormat.png);
+
+                            if (picData != null) {
+                              // Get temp directory
+                              final tempDir = await getTemporaryDirectory();
+                              final file = File('${tempDir.path}/encqder_${item.id}.png');
+                              await file.writeAsBytes(picData.buffer.asUint8List());
+
+                              if (!context.mounted) return;
+                              Navigator.pop(context); // Dismiss loading
+
+                              // Share the file
+                              await Share.shareXFiles(
+                                [XFile(file.path)],
+                                text: 'Scanned via EncQder: ${item.data}',
+                              );
+                            } else {
+                              throw Exception('Failed to generate image data');
+                            }
+                          } else {
+                            throw Exception('Image generation failed: Invalid QR data');
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            Navigator.pop(context); // Dismiss loading if it's showing
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Failed to share image: $e'),
+                                backgroundColor: Theme.of(context).colorScheme.error,
+                              ),
+                            );
+                            // Fallback to text sharing
+                            Share.share(item.data);
+                          }
+                        }
                       },
                       icon: const Icon(Icons.share_rounded),
                       label: const Text('Share'),

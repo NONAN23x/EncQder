@@ -1,24 +1,32 @@
 import 'package:flutter/material.dart';
 
 import 'screens/home_screen.dart';
+import 'services/theme_provider.dart';
 
 void main() {
-  runApp(const EncQderApp());
+  runApp(
+    EncQderApp(themeProvider: ThemeProvider()),
+  );
 }
 
 class EncQderApp extends StatelessWidget {
-  const EncQderApp({super.key});
+  final ThemeProvider themeProvider;
+  
+  const EncQderApp({super.key, required this.themeProvider});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'EncQder',
-      debugShowCheckedModeBanner: false,
-      themeMode: ThemeMode.system, // Natively adapt to light/dark
-      theme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.light,
-        scaffoldBackgroundColor: const Color(0xFFF8F9FA),
+    return ListenableBuilder(
+      listenable: themeProvider,
+      builder: (context, _) {
+        return MaterialApp(
+          title: 'EncQder',
+          debugShowCheckedModeBanner: false,
+          themeMode: themeProvider.themeMode, // Controlled dynamically
+          theme: ThemeData(
+            useMaterial3: true,
+            brightness: Brightness.light,
+            scaffoldBackgroundColor: const Color(0xFFF8F9FA),
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.black,
           brightness: Brightness.light,
@@ -145,7 +153,9 @@ class EncQderApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const HomeScreen(),
+      home: HomeScreen(themeProvider: themeProvider),
+    );
+        },
     );
   }
 }
