@@ -1,0 +1,41 @@
+# ─── OS & Editor ────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.class
+*.log
+*.pyc
+.atom/
+.history
+.svn/
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# VS Code — uncomment if you don't want to share launch/task configs
+#.vscode/
+
+# ─── Flutter / Dart / Pub ───────────────────────────────────────────────────
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+.swiftpm/
+**/doc/api/
+**/ios/Flutter/.last_build_id
+
+# ─── Build outputs ──────────────────────────────────────────────────────────
+/build/
+/coverage/
+*.apk
+*.aab
+*.ipa
+app.*.symbols
+app.*.map.json
+
+# ─── Android Studio build artifacts ─────────────────────────────────────────
+/android/app/debug
+/android/app/profile
+/android/app/release
