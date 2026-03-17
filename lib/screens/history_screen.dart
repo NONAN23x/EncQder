@@ -22,9 +22,40 @@ class HistoryScreen extends StatefulWidget {
   State<HistoryScreen> createState() => _HistoryScreenState();
 }
 
+enum FilterType { all, month, year }
+
 class _HistoryScreenState extends State<HistoryScreen> {
   List<QrItem> _history = [];
   bool _isLoading = true;
+
+  FilterType _filterType = FilterType.all;
+  DateTime? _filterDate;
+  bool _isAscending = false;
+
+  List<QrItem> get _filteredAndSortedHistory {
+    List<QrItem> items = List.from(_history);
+
+    if (_filterType == FilterType.month && _filterDate != null) {
+      items = items.where((item) {
+        return item.createdAt.year == _filterDate!.year &&
+               item.createdAt.month == _filterDate!.month;
+      }).toList();
+    } else if (_filterType == FilterType.year && _filterDate != null) {
+      items = items.where((item) {
+        return item.createdAt.year == _filterDate!.year;
+      }).toList();
+    }
+
+    items.sort((a, b) {
+      if (_isAscending) {
+        return a.createdAt.compareTo(b.createdAt);
+      } else {
+        return b.createdAt.compareTo(a.createdAt);
+      }
+    });
+
+    return items;
+  }
 
   @override
   void initState() {
@@ -51,8 +82,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
           IconButton(
             icon: const Icon(Icons.settings_rounded),
             tooltip: 'Settings',
-            onPressed: () {
-              Navigator.push(
+            onPressed: () async {
+              await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => SettingsScreen(
@@ -60,6 +91,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   ),
                 ),
               );
+              _loadHistory();
             },
           ),
         ],
@@ -67,61 +99,251 @@ class _HistoryScreenState extends State<HistoryScreen> {
       body: SafeArea(
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
-            : RefreshIndicator(
-                onRefresh: _loadHistory,
-                child: _history.isEmpty
-                    ? SingleChildScrollView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        child: SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.7,
-                          child: _buildEmptyState(),
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _history.length,
-                        itemBuilder: (context, index) {
-                          return _buildHistoryCard(_history[index]);
-                        },
+              : RefreshIndicator(
+                  onRefresh: _loadHistory,
+                  child: Column(
+                    children: [
+                      if (_history.isNotEmpty) _buildControlBar(),
+                      Expanded(
+                        child: _filteredAndSortedHistory.isEmpty
+                            ? SingleChildScrollView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                child: SizedBox(
+                                  height: MediaQuery.of(context).size.height * 0.7,
+                                  child: _buildEmptyState(),
+                                ),
+                              )
+                            : ListView.builder(
+                                padding: const EdgeInsets.all(16),
+                                itemCount: _filteredAndSortedHistory.length,
+                                itemBuilder: (context, index) {
+                                  return _buildHistoryCard(_filteredAndSortedHistory[index]);
+                                },
+                              ),
                       ),
-              ),
+                    ],
+                  ),
+                ),
       ),
     );
   }
 
   Widget _buildEmptyState() {
+    final bool hasHistoryButNoMatch = _history.isNotEmpty && _filteredAndSortedHistory.isEmpty;
+
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            Icons.qr_code_2,
+            hasHistoryButNoMatch ? Icons.filter_alt_off_rounded : Icons.qr_code_2,
             size: 80,
-            color: Theme.of(
-              context,
-            ).colorScheme.onSurface.withValues(alpha: 0.1),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
           ),
           const SizedBox(height: 24),
           Text(
-            'No History Yet',
+            hasHistoryButNoMatch ? 'No matches' : 'No History Yet',
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.5),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Swipe left to Create, right to Scan',
+            hasHistoryButNoMatch ? 'Try changing your filter settings' : 'Swipe left to Create, right to Scan',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.4),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
             ),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildControlBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Row(
+        children: [
+          // Filter Pills
+          Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildFilterPill('All', FilterType.all),
+                _buildFilterPill('Month', FilterType.month),
+                _buildFilterPill('Year', FilterType.year),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          
+          // Active Filter Chip
+          if (_filterType != FilterType.all && _filterDate != null)
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Chip(
+                  label: Text(
+                    _filterType == FilterType.month
+                        ? DateFormat('MMM yyyy').format(_filterDate!)
+                        : DateFormat('yyyy').format(_filterDate!),
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                  onDeleted: () {
+                    setState(() {
+                      _filterType = FilterType.all;
+                      _filterDate = null;
+                    });
+                  },
+                  deleteIcon: const Icon(Icons.close, size: 16),
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+            )
+          else
+            const Spacer(),
+            
+          // Sort Toggle
+          IconButton(
+            icon: Icon(_isAscending ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded),
+            tooltip: _isAscending ? 'Oldest first' : 'Newest first',
+            onPressed: () {
+              setState(() {
+                _isAscending = !_isAscending;
+              });
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterPill(String label, FilterType type) {
+    final isSelected = _filterType == type;
+    return InkWell(
+      onTap: () => _handleFilterTap(type),
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? Theme.of(context).colorScheme.primaryContainer : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            color: isSelected ? Theme.of(context).colorScheme.onPrimaryContainer : Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleFilterTap(FilterType type) async {
+    if (type == FilterType.all) {
+      setState(() {
+        _filterType = FilterType.all;
+        _filterDate = null;
+      });
+      return;
+    }
+
+    final initialDate = _filterDate ?? DateTime.now();
+
+    if (type == FilterType.year) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Select Year'),
+          content: SizedBox(
+            width: 300,
+            height: 300,
+            child: YearPicker(
+              firstDate: DateTime(2000),
+              lastDate: DateTime.now(),
+              selectedDate: initialDate,
+              onChanged: (DateTime dateTime) {
+                Navigator.pop(context);
+                setState(() {
+                  _filterType = FilterType.year;
+                  _filterDate = dateTime;
+                });
+              },
+            ),
+          ),
+        ),
+      );
+    } else if (type == FilterType.month) {
+      int selectedYear = initialDate.year;
+      int selectedMonth = initialDate.month;
+      
+      showDialog(
+        context: context,
+        builder: (context) {
+          return StatefulBuilder(builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Select Month'),
+              content: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  DropdownButton<int>(
+                    value: selectedMonth,
+                    items: List.generate(12, (index) {
+                      return DropdownMenuItem(
+                        value: index + 1,
+                        child: Text(DateFormat('MMM').format(DateTime(2000, index + 1))),
+                      );
+                    }),
+                    onChanged: (val) {
+                      setDialogState(() => selectedMonth = val!);
+                    },
+                  ),
+                  const SizedBox(width: 16),
+                  DropdownButton<int>(
+                    value: selectedYear,
+                    items: List.generate(DateTime.now().year - 1999, (index) {
+                      final year = DateTime.now().year - index;
+                      return DropdownMenuItem(
+                        value: year,
+                        child: Text(year.toString()),
+                      );
+                    }),
+                    onChanged: (val) {
+                      setDialogState(() => selectedYear = val!);
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    setState(() {
+                      _filterType = FilterType.month;
+                      _filterDate = DateTime(selectedYear, selectedMonth);
+                    });
+                  },
+                  child: const Text('Apply'),
+                ),
+              ],
+            );
+          });
+        },
+      );
+    }
   }
 
   Widget _buildHistoryCard(QrItem item) {

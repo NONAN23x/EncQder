@@ -1,5 +1,13 @@
-import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'dart:io';
 
+import 'package:archive/archive.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+
+import '../services/storage_service.dart';
 import '../services/theme_provider.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -20,12 +28,14 @@ class SettingsScreen extends StatelessWidget {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () {
-              // TODO: Implement Storage wipe
+            onPressed: () async {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('All data wiped successfully')),
-              );
+              await StorageService().clearHistory();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('All data wiped successfully')),
+                );
+              }
             },
             child: const Text('Wipe Data'),
           ),
@@ -34,11 +44,124 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  void _exportData(BuildContext context) {
-    // TODO: Implement ZIP export functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Export functionality coming soon!')),
-    );
+  Future<void> _exportData(BuildContext context) async {
+    try {
+      final history = await StorageService().getHistory();
+      if (history.isEmpty) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No history to export')),
+          );
+        }
+        return;
+      }
+
+      final buffer = StringBuffer();
+      for (final item in history) {
+        buffer.writeln('Date: ${item.createdAt.toIso8601String()}');
+        buffer.writeln('Content: ${item.data}');
+        buffer.writeln('---');
+      }
+
+      final archive = Archive();
+      final textBytes = utf8.encode(buffer.toString());
+      archive.addFile(ArchiveFile('encqder_history.txt', textBytes.length, textBytes));
+
+      final zipData = ZipEncoder().encode(archive);
+
+      final tempDir = await getTemporaryDirectory();
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final file = File('${tempDir.path}/encqder_backup_$timestamp.zip');
+      await file.writeAsBytes(zipData);
+
+      if (context.mounted) {
+        await Share.shareXFiles(
+          [XFile(file.path)],
+          text: 'EncQder History Backup',
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Export failed: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _importData(BuildContext context) async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['zip'],
+      );
+
+      if (result == null || result.files.isEmpty) return;
+
+      final path = result.files.single.path;
+      if (path == null || path.isEmpty) return;
+
+      final bytes = await File(path).readAsBytes();
+      final archive = ZipDecoder().decodeBytes(bytes);
+
+      String? fileContent;
+      for (final file in archive) {
+        if (file.isFile && file.name == 'encqder_history.txt') {
+          fileContent = utf8.decode(file.content as List<int>);
+          break;
+        }
+      }
+
+      if (fileContent == null) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Invalid backup file format')),
+          );
+        }
+        return;
+      }
+
+      final items = <QrItem>[];
+      final parts = fileContent.split('---');
+      for (final part in parts) {
+        if (part.trim().isEmpty) continue;
+        
+        final lines = part.trim().split('\n');
+        String? dateStr;
+        String? content;
+
+        for (final line in lines) {
+          if (line.startsWith('Date: ')) {
+            dateStr = line.substring('Date: '.length).trim();
+          } else if (line.startsWith('Content: ')) {
+            content = line.substring('Content: '.length).trim();
+          }
+        }
+
+        if (dateStr != null && content != null) {
+          items.add(QrItem(
+            id: DateTime.now().millisecondsSinceEpoch.toString() + items.length.toString(),
+            data: content,
+            createdAt: DateTime.tryParse(dateStr) ?? DateTime.now(),
+            originType: 'imported',
+          ));
+        }
+      }
+
+      await StorageService().mergeItems(items);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Imported ${items.length} entries successfully')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Import failed: $e')),
+        );
+      }
+    }
   }
 
   @override
@@ -66,6 +189,14 @@ class SettingsScreen extends StatelessWidget {
             subtitle: 'Export all QR codes to a .zip file',
             icon: Icons.upload_file_rounded,
             onTap: () => _exportData(context),
+          ),
+          const SizedBox(height: 12),
+          _buildDataCard(
+            context: context,
+            title: 'Import History',
+            subtitle: 'Restore QR codes from a backup .zip file',
+            icon: Icons.download_rounded,
+            onTap: () => _importData(context),
           ),
           const SizedBox(height: 12),
           _buildDataCard(

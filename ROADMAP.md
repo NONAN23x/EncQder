@@ -2,6 +2,12 @@
 
 ## ✅ Completed (March 17, 2026)
 
+### Data Portability & Management
+- **ZIP Export/Import**: Implemented batch export of history metadata to a secure `.zip` archive and a matching import/merge restoration feature.
+- **Secure Full Wipe**: Added a destructive "Wipe Data" action in Settings with double-confirmation and haptic-aligned feedback.
+- **Advanced History Filtering**: Introduced a premium control bar for sorting (Asc/Desc) and filtering by `Month` or `Year`.
+- **Dynamic Empty States**: Added conditional UI states for "No matches found" vs "No history exists."
+
 ### Premium Settings & Customization
 - **Settings Dashboard**: Designed a dedicated settings interface for storage and visual management.
 - **3-Stage Theme Slider**: Implemented a fluid, animated segmented control for `Light | System | Dark` modes.
@@ -15,28 +21,15 @@
 - **Improved List UI**: Added origin badges and formatted timestamps to the history list.
 
 ## ✅ Completed (March 16, 2026)
-
-### Core Architecture
-- Initialized Flutter project with iOS and Android targets.
-- Established clean `screens / services / widgets` structure.
-- Implemented `PageView` navigation with synced animated bottom bar.
-
-### Features
-- Text-to-QR generation with offline history persistence.
-- `mobile_scanner` integration for native camera access.
-- Duplicate promotion in history (prevents clutter).
+... [Previous Core Architecture and Features] ...
 
 ## 🔮 Planned
 
 ### Upcoming
 - [ ] **Custom QR Labels**: Ability to rename entries in history (e.g., "Home Wi-Fi", "Payment UPI", "Office Key") for easier identification.
 
-### Data Portability
-- [ ] **ZIP Export**: Batch export all QR metadata and images to a portable `.zip` archive.
-- [ ] **Full Wipe**: Implement a secure "Reset App" action with haptic confirmation.
-
 ### Visual Identity
-- [ ] **Custom App Icon**: Deploy `1024×1024` brand assets via `flutter_launcher_icons`.
+- [x] **Custom App Icon**: Successfully deployed brand assets via `flutter_launcher_icons`.
 - [ ] **Splash Screen**: Native splash sequence using `flutter_native_splash`.
 
 ### Advanced QR

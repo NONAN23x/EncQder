@@ -96,4 +96,26 @@ class StorageService {
     
     await _prefs!.setString(_historyKey, json.encode(jsonList));
   }
+
+  Future<void> mergeItems(List<QrItem> newItems) async {
+    final List<QrItem> currentHistory = await getHistory();
+    
+    // Create a set of existing data to avoid O(N^2) lookups
+    final Set<String> existingData = currentHistory.map((e) => e.data).toSet();
+
+    bool hasChanges = false;
+    for (final item in newItems) {
+      if (!existingData.contains(item.data)) {
+        currentHistory.add(item);
+        existingData.add(item.data); // Keep tracking
+        hasChanges = true;
+      }
+    }
+
+    if (hasChanges) {
+      // Re-sort by date descending to maintain order after merge
+      currentHistory.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      await _saveHistory(currentHistory);
+    }
+  }
 }
