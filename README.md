@@ -2,6 +2,12 @@
 
 > A clean, minimal Flutter app for encoding and decoding QR codes — with offline history, system-adaptive theming, and a gesture-first interface.
 
+*This project is **AI Vibe Coded**, built as a high-fidelity experiment to push the boundaries of [Antigravity](https://google.com) and assist with my personal utility workflows.*
+
+## Why It Exists
+
+EncQder was born from a need for a privacy-first, zero-friction QR tool that doesn't track you. It's a playground for premium Flutter UI patterns and a personal assistant for my daily digital organization.
+
 ## What It Does
 
 EncQder gives you three core tools in one swipeable interface:

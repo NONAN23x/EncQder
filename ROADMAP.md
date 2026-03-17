@@ -1,68 +1,44 @@
 # EncQder Roadmap
 
+## ✅ Completed (March 17, 2026)
+
+### Premium Settings & Customization
+- **Settings Dashboard**: Designed a dedicated settings interface for storage and visual management.
+- **3-Stage Theme Slider**: Implemented a fluid, animated segmented control for `Light | System | Dark` modes.
+- **Enhanced Scanner UX**: Replaced generic overlays with a premium black-and-transparent cutout UI, featuring elegant corner brackets.
+- **Idle Timeout**: Added power-saving logic that auto-navigates away from the camera after 120 seconds of inactivity.
+
+### Data & History Enhancements
+- **QR Origin Tracking**: History now distinguishes between `Scanned` and `Generated` QR codes via local storage metadata.
+- **Gallery Integration**: Scanned QR codes are automatically saved as high-resolution images to a dedicated "EncQder" album in the device gallery.
+- **High-Fidelity Sharing**: Details view now shares pixel-perfect `.png` renders instead of raw text.
+- **Improved List UI**: Added origin badges and formatted timestamps to the history list.
+
 ## ✅ Completed (March 16, 2026)
 
-### Architecture
+### Core Architecture
 - Initialized Flutter project with iOS and Android targets.
-- Established a clean `screens / services / widgets` directory structure.
-- Implemented `PageView`-based navigation with a synced animated bottom bar for swipe-driven tab switching.
+- Established clean `screens / services / widgets` structure.
+- Implemented `PageView` navigation with synced animated bottom bar.
 
-### Create QR Tab
-- Text input with 500-character limit.
-- No live preview — a "Ready to Encode" placeholder is shown while typing to keep the experience clean.
-- Saves raw text to offline history on confirmation.
-
-### Scan QR Tab
+### Features
+- Text-to-QR generation with offline history persistence.
 - `mobile_scanner` integration for native camera access.
-- Custom viewfinder overlay with corner indicators, torch toggle, and camera flip controls.
-- Raw content displayed in a modal on scan — no automatic URL resolution or link-following.
-- One-tap save to history.
-
-### History Tab
-- Persistent offline storage via `shared_preferences`.
-- Duplicate entries are automatically promoted to the top of the list rather than duplicated.
-- Tapping an entry opens a detail modal showing the rendered QR code and a delete option.
-- Formatted timestamps using the `intl` package.
-
-### Code Quality
-- Zero issues on `flutter analyze`.
-- Replaced all deprecated `withOpacity()` calls with `withValues(alpha:)`.
-- Fixed async `BuildContext` usage across all screens following `context.mounted` best practices.
-- Corrected `CardTheme` → `CardThemeData` and invalid `Colors.whitee7` → `Colors.white70`.
-
----
+- Duplicate promotion in history (prevents clutter).
 
 ## 🔮 Planned
 
-### Custom App Icon
-Uses `flutter_launcher_icons`. Add your `1024×1024` PNG at `assets/icon/app_icon.png` and configure `pubspec.yaml`:
+### Upcoming
+- [ ] **Custom QR Labels**: Ability to rename entries in history (e.g., "Home Wi-Fi", "Payment UPI", "Office Key") for easier identification.
 
-```yaml
-flutter_launcher_icons:
-  android: true
-  ios: true
-  image_path: "assets/icon/app_icon.png"
-```
+### Data Portability
+- [ ] **ZIP Export**: Batch export all QR metadata and images to a portable `.zip` archive.
+- [ ] **Full Wipe**: Implement a secure "Reset App" action with haptic confirmation.
 
-Then run:
-```bash
-flutter pub run flutter_launcher_icons
-```
+### Visual Identity
+- [ ] **Custom App Icon**: Deploy `1024×1024` brand assets via `flutter_launcher_icons`.
+- [ ] **Splash Screen**: Native splash sequence using `flutter_native_splash`.
 
-### Custom Splash Screen
-Uses `flutter_native_splash`. Add your logo at `assets/splash/logo.png` and configure `pubspec.yaml`:
-
-```yaml
-flutter_native_splash:
-  color: "#F8F9FA"
-  image: "assets/splash/logo.png"
-  color_dark: "#121212"
-  image_dark: "assets/splash/logo.png"
-  android: true
-  ios: true
-```
-
-Then run:
-```bash
-flutter pub run flutter_native_splash:create
-```
+### Advanced QR
+- [ ] **Color Customization**: Allow users to change foreground/background colors for generated QRs.
+- [ ] **Batch Scanning**: Support continuous scanning mode for high-volume use cases.
