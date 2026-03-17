@@ -1,3 +1,5 @@
+![EncQder](assets/thumbnail.png)
+
 # EncQder
 
 > A clean, minimal Flutter app for encoding and decoding QR codes — with offline history, system-adaptive theming, and a gesture-first interface.
