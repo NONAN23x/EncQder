@@ -584,37 +584,49 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ],
               ),
               const SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.of(context).push(
-                    PageRouteBuilder(
-                      opaque: false,
-                      pageBuilder: (context, animation, secondaryAnimation) => ShareOverlay(item: item),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          PageRouteBuilder(
+                            opaque: false,
+                            pageBuilder: (context, animation, secondaryAnimation) => ShareOverlay(item: item),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.share_rounded),
+                      label: const Text('Share'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
                     ),
-                  );
-                },
-                icon: const Icon(Icons.share_rounded),
-                label: const Text('Share'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
                   ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: () async {
-                  await StorageService().removeItem(item.id);
-                  if (!context.mounted) return;
-                  Navigator.pop(context);
-                  _loadHistory();
-                },
-                style: TextButton.styleFrom(
-                  foregroundColor: Theme.of(context).colorScheme.error,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: const Text('Delete'),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextButton.icon(
+                      onPressed: () async {
+                        await StorageService().removeItem(item.id);
+                        if (!context.mounted) return;
+                        Navigator.pop(context);
+                        _loadHistory();
+                      },
+                      icon: const Icon(Icons.delete_outline),
+                      label: const Text('Delete'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Theme.of(context).colorScheme.error,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -752,7 +764,7 @@ class _ShareOverlayState extends State<ShareOverlay> with SingleTickerProviderSt
                           Navigator.pop(context);
                           await Share.shareXFiles(
                             [XFile(file.path)],
-                            text: 'Scanned via EncQder: ${widget.item.data}',
+                            text: '${widget.item.label.isNotEmpty ? widget.item.label : "QR Code"}\nScanned via EncQder: ${widget.item.data}',
                           );
                         } catch (e) {
                           if (!context.mounted) return;

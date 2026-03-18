@@ -70,13 +70,43 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildNavItem(context, Icons.edit_outlined, 0, 'Create'),
-                _buildNavItem(context, Icons.history, 1, 'History'),
-                _buildNavItem(context, Icons.qr_code_scanner, 2, 'Scan'),
-              ],
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final double tabWidth = constraints.maxWidth / 3;
+                return AnimatedBuilder(
+                  animation: _pageController,
+                  builder: (context, child) {
+                    double currentPage = _pageController.hasClients ? (_pageController.page ?? 1.0) : 1.0;
+                    return Stack(
+                      children: [
+                        Positioned(
+                          left: tabWidth * currentPage,
+                          top: 0,
+                          bottom: 0,
+                          width: tabWidth,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            Expanded(child: _buildNavItem(context, Icons.edit_outlined, 0, 'Create')),
+                            Expanded(child: _buildNavItem(context, Icons.history, 1, 'History')),
+                            Expanded(child: _buildNavItem(context, Icons.qr_code_scanner, 2, 'Scan')),
+                          ],
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
             ),
           ),
         ),
@@ -90,59 +120,60 @@ class _HomeScreenState extends State<HomeScreen> {
     int index,
     String label,
   ) {
-    return AnimatedBuilder(
-      animation: _pageController,
-      builder: (context, child) {
-        // Handle initial frame when page controller might not be attached
-        double currentPage = _pageController.hasClients
-            ? (_pageController.page ?? 1.0)
-            : 1.0;
-        final double t = (1.0 - (currentPage - index).abs()).clamp(0.0, 1.0);
+    // The parent Row is now inside an AnimatedBuilder, so we don't strictly need one here,
+    // but we can just compute currentPage directly.
+    double currentPage = _pageController.hasClients
+        ? (_pageController.page ?? 1.0)
+        : 1.0;
+    final double t = (1.0 - (currentPage - index).abs()).clamp(0.0, 1.0);
 
-        return GestureDetector(
-          onTap: () => _navigateToPage(index),
-          behavior: HitTestBehavior.opaque,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: t * 0.1),
-              borderRadius: BorderRadius.circular(20),
+    return GestureDetector(
+      onTap: () => _navigateToPage(index),
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        color: Colors.transparent, // Ensure full hit area
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: Color.lerp(
+                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                Theme.of(context).colorScheme.primary,
+                t,
+              ),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  icon,
-                  color: Color.lerp(
-                    Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-                    Theme.of(context).colorScheme.primary,
-                    t,
+            ClipRect(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                widthFactor: t,
+                child: Opacity(
+                  opacity: t.clamp(0.0, 1.0),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(width: 8),
+                      Text(
+                        label,
+                        style: TextStyle(
+                          color: Color.lerp(
+                            Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                            Theme.of(context).colorScheme.primary,
+                            t,
+                          ),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                AnimatedSize(
-                  duration: Duration.zero,
-                  child: t > 0.05
-                      ? Opacity(
-                          opacity: t.clamp(0.0, 1.0),
-                          child: Row(mainAxisSize: MainAxisSize.min, children: [
-                            const SizedBox(width: 8),
-                            Text(label, style: TextStyle(
-                              color: Color.lerp(
-                                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-                                Theme.of(context).colorScheme.primary,
-                                t,
-                              ),
-                              fontWeight: FontWeight.w600,
-                            )),
-                          ]),
-                        )
-                      : const SizedBox.shrink(),
-                ),
-              ],
+              ),
             ),
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 }

@@ -45,36 +45,7 @@ class _InputScreenState extends State<InputScreen> {
               const SizedBox(height: 32),
 
               if (_currentInput.isNotEmpty) ...[
-                Expanded(
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.qr_code_2_rounded,
-                          size: 80,
-                          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-                        ),
-                        const SizedBox(height: 24),
-                        Text(
-                          'Ready to Encode',
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Save to add text into history',
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 32),
-
+                const Spacer(),
                 Row(
                   children: [
                     Expanded(

@@ -27,10 +27,12 @@
 
 ### Upcoming
 - [ ] **Custom QR Labels**: Ability to rename entries in history (e.g., "Home Wi-Fi", "Payment UPI", "Office Key") for easier identification.
+- [ ] **Deployment** : add information for developer, fix bugs, unnecessary logic, publish to plaay store
 
 ### Visual Identity
 - [x] **Custom App Icon**: Successfully deployed brand assets via `flutter_launcher_icons`.
 - [ ] **Splash Screen**: Native splash sequence using `flutter_native_splash`.
+- [ ] ** UI **: Enhance UI
 
 ### Advanced QR
 - [ ] **Batch Scanning**: Support continuous scanning mode for high-volume use cases.
