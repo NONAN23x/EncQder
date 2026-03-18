@@ -1,6 +1,12 @@
 # EncQder Roadmap
 
-## ✅ Completed (March 18, 2026)
+## ✅ Version 1.0.1 (Current)
+
+### Premium Aesthetics (Shipped March 18, 2026)
+- **Material You QR Codes**: Replaced static blue QR colors with a subtle, dynamic radial gradient that pulls from the user's OS-level wallpaper theme (Android 12+).
+- **Connected Squircle Eyes**: Refined the QR finder patterns to be continuous, smooth "squircle" shapes, moving away from disconnected dots for a more premium, connected aesthetic.
+- **Padded "Airy" Data Modules**: Adjusted the data dot density to increase the whitespace between modules, giving the QR code a lighter, more modern and readable feel.
+- **Optimized Export Padding**: Halved the quiet zone on exported images for a tighter, more modern look.
 
 ### System Integration & Theming
 - **Material You Dynamic Theming**: Configured the application to extract and apply OS-level dynamic color palettes on Android 12+ devices, while maintaining custom light/dark fallbacks.
@@ -18,26 +24,7 @@
 - **Auto-Incrementing Naming**: New items now automatically receive unique default labels (e.g., "QR Code 2", "QR Code 3") to avoid clutter.
 - **Side-by-Side Details Actions**: Redesigned the detail view actions into a clean horizontal layout for better reachability.
 
-## ✅ Completed (March 17, 2026)
-
-### Data Portability & Management
-- **ZIP Export/Import**: Implemented batch export of history metadata to a secure `.zip` archive and a matching import/merge restoration feature.
-- **Secure Full Wipe**: Added a destructive "Wipe Data" action in Settings with double-confirmation and haptic-aligned feedback.
-- **Advanced History Filtering**: Introduced a premium control bar for sorting (Asc/Desc) and filtering by `Month` or `Year`.
-- **Dynamic Empty States**: Added conditional UI states for "No matches found" vs "No history exists."
-
-### Premium Settings & Customization
-- **Settings Dashboard**: Designed a dedicated settings interface for storage and visual management.
-- **3-Stage Theme Slider**: Implemented a fluid, animated segmented control for `Light | System | Dark` modes.
-- **Enhanced Scanner UX**: Replaced generic overlays with a premium black-and-transparent cutout UI, featuring elegant corner brackets.
-- **Idle Timeout**: Added power-saving logic that auto-navigates away from the camera after 120 seconds of inactivity.
-
-### Data & History Enhancements
-- **QR Origin Tracking**: History now distinguishes between `Scanned` and `Generated` QR codes via local storage metadata.
-- **High-Fidelity Sharing**: Details view now shares pixel-perfect `.png` renders instead of raw text.
-- **Improved List UI**: Added origin badges and formatted timestamps to the history list.
-
-## 🔮 Planned
+## 🔮 Planned (v1.1.0 and beyond)
 
 ### Next Up
 - [x] **Play Store Release**: Complete final pre-launch security and compliance audits.
@@ -49,3 +36,4 @@
 
 ### Advanced Capabilities
 - [ ] **Continuous Batch Scanning**: Enable high-throughput scanning mode without returning to the home screen.
+- [ ] **QR Code Content Actions**: Add contextual buttons based on scanned content (e.g., "Add to Contacts", "Connect to Wi-Fi", "Open in Maps").
