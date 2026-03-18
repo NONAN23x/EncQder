@@ -729,16 +729,20 @@ class _ShareOverlayState extends State<ShareOverlay> with SingleTickerProviderSt
 
       final qrImage = QrImage(qrCode);
       
-      const qrBrush = PrettyQrBrush.gradient(
+      // Get the current primary color to match the dynamic theme
+      final primaryColor = Theme.of(context).colorScheme.primary;
+      final subtleGradientColor = Color.lerp(primaryColor, const Color(0xFF000000), 0.4) ?? primaryColor;
+      
+      final qrBrush = PrettyQrBrush.gradient(
         gradient: RadialGradient(
           colors: [
-            Color(0xFF1565C0), // Colors.blue.shade800
-            Color(0xFF000000), // black
+            subtleGradientColor,
+            const Color(0xFF000000), // black
           ],
         ),
       );
 
-      const decoration = PrettyQrDecoration(
+      final decoration = PrettyQrDecoration(
         // ignore: experimental_member_use
         shape: PrettyQrShape.custom(
           PrettyQrDotsSymbol(
@@ -757,7 +761,7 @@ class _ShareOverlayState extends State<ShareOverlay> with SingleTickerProviderSt
           ),
         ),
         background: Color(0xFFFFFFFF),
-        quietZone: PrettyQrQuietZone.modules(2),
+        quietZone: const PrettyQrQuietZone.modules(2),
       );
 
       final configuration = createLocalImageConfiguration(context);

@@ -13,10 +13,15 @@ class QrDisplay extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final qrColor = isDark ? Colors.white : Colors.black;
     
+    // Subtle dynamic gradient based on user's wallpaper/Material You theme
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    // Mix the primary color heavily with the qrColor so it's a subtle tint in the center
+    final subtleGradientColor = Color.lerp(primaryColor, qrColor, 0.4) ?? primaryColor;
+    
     final qrBrush = PrettyQrBrush.gradient(
       gradient: RadialGradient(
         colors: [
-          isDark ? Colors.blue.shade200 : Colors.blue.shade800,
+          subtleGradientColor,
           qrColor,
         ],
       ),
