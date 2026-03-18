@@ -14,11 +14,17 @@ EncQder was born from a need for a privacy-first, zero-friction QR tool that doe
 
 EncQder gives you three core tools in one swipeable interface:
 
-- **Create** — Type any text or URL to generate a QR code, then save it to your history.
-- **Scan** — Point your camera at any QR code to read its raw content — no link-following, no auto-navigation.
-- **History** — Browse previously created and scanned QR codes, view their full QR image, or delete them.
+- **Create** — Type any text or URL to generate a QR code with an auto-incrementing label, then save it to your history.
+- **Scan** — Point your camera at any QR code to read its content and add it to your local history.
+- **History** — Browse entries with custom labels, view high-res QR renders, and access a **Smart Share Sheet** for native sharing or gallery saving.
+- **Privacy-First** — All data is stored **locally on your device**. No network calls, no accounts, no tracking.
 
-All data is stored **locally on your device**. No network calls, no accounts, no tracking.
+## Premium UX Features
+
+- **Fluid Navigation** — A custom "sliding pill" bottom nav that interpolates position and style in real-time as you swipe between screens.
+- **Smart Share Sheet** — An animated, blurred overlay with staggered action chips for one-tap sharing or saving to the device gallery.
+- **Inline Renaming** — Keep your history organized by giving any QR code a custom label (e.g., "Home Wi-Fi", "Office Key").
+- **Portrait Locked** — Optimized for a consistent, single-handed mobile experience.
 
 ## Getting Started
 

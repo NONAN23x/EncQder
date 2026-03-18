@@ -1,5 +1,18 @@
 # EncQder Roadmap
 
+## ✅ Completed (March 18, 2026)
+
+### Premium UI & Fluidity
+- **Sliding Pill Navigation**: Replaced the static bottom nav with a custom "sliding pill" background that interpolates position and opacity during swiping.
+- **Smart Share Overlay**: Replaced vertical buttons with an animated, blurred share sheet featuring staggered action chips (Save to Gallery / Native Share).
+- **UI Clean-up**: Removed redundant live QR previews on the Create screen for a more minimal, distraction-free input experience.
+- **Portrait Enforcement**: Locked the app to portrait mode for a consistent single-handed layout.
+
+### Smart Metadata & Management
+- **Editable Labels**: Added a `label` field to history items with a pencil icon for inline renaming directly in the detail view.
+- **Auto-Incrementing Naming**: New items now automatically receive unique default labels (e.g., "QR Code 2", "QR Code 3") to avoid clutter.
+- **Side-by-Side Details Actions**: Redesigned the detail view actions into a clean horizontal layout for better reachability.
+
 ## ✅ Completed (March 17, 2026)
 
 ### Data Portability & Management
@@ -16,23 +29,17 @@
 
 ### Data & History Enhancements
 - **QR Origin Tracking**: History now distinguishes between `Scanned` and `Generated` QR codes via local storage metadata.
-- **Gallery Integration**: Scanned QR codes are automatically saved as high-resolution images to a dedicated "EncQder" album in the device gallery.
 - **High-Fidelity Sharing**: Details view now shares pixel-perfect `.png` renders instead of raw text.
 - **Improved List UI**: Added origin badges and formatted timestamps to the history list.
-
-## ✅ Completed (March 16, 2026)
-... [Previous Core Architecture and Features] ...
 
 ## 🔮 Planned
 
 ### Upcoming
-- [ ] **Custom QR Labels**: Ability to rename entries in history (e.g., "Home Wi-Fi", "Payment UPI", "Office Key") for easier identification.
-- [ ] **Deployment** : add information for developer, fix bugs, unnecessary logic, publish to plaay store
+- [ ] **Deployment**: Final audit for Play Store submission.
 
 ### Visual Identity
-- [x] **Custom App Icon**: Successfully deployed brand assets via `flutter_launcher_icons`.
+- [x] **Custom App Icon**: Deployed brand assets via `flutter_launcher_icons`.
 - [ ] **Splash Screen**: Native splash sequence using `flutter_native_splash`.
-- [ ] ** UI **: Enhance UI
 
 ### Advanced QR
 - [ ] **Batch Scanning**: Support continuous scanning mode for high-volume use cases.
