@@ -1,5 +1,5 @@
 name: encqder
-description: "A new Flutter project."
+description: "A powerful QR code scanner and generator."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+1
+version: 1.0.1+2
 
 environment:
   sdk: ^3.12.0-247.0.dev
@@ -38,13 +38,14 @@ dependencies:
   qr_flutter: ^4.1.0
   shared_preferences: ^2.5.4
   intl: ^0.20.2
-  share_plus: ^10.1.4
+  share_plus: ^12.0.1
   provider: ^6.1.5+1
   path_provider: ^2.1.5
   gal: ^2.3.2
   archive: ^4.0.9
   file_picker: ^10.3.10
   dynamic_color: ^1.8.1
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:

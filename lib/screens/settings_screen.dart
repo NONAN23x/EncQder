@@ -56,16 +56,12 @@ class SettingsScreen extends StatelessWidget {
         return;
       }
 
-      final buffer = StringBuffer();
-      for (final item in history) {
-        buffer.writeln('Date: ${item.createdAt.toIso8601String()}');
-        buffer.writeln('Content: ${item.data}');
-        buffer.writeln('---');
-      }
+      final jsonList = history.map((item) => item.toJson()).toList();
+      final jsonString = jsonEncode(jsonList);
 
       final archive = Archive();
-      final textBytes = utf8.encode(buffer.toString());
-      archive.addFile(ArchiveFile('encqder_history.txt', textBytes.length, textBytes));
+      final textBytes = utf8.encode(jsonString);
+      archive.addFile(ArchiveFile('encqder_history.json', textBytes.length, textBytes));
 
       final zipData = ZipEncoder().encode(archive);
 
@@ -75,9 +71,11 @@ class SettingsScreen extends StatelessWidget {
       await file.writeAsBytes(zipData);
 
       if (context.mounted) {
-        await Share.shareXFiles(
-          [XFile(file.path)],
-          text: 'EncQder History Backup',
+        await SharePlus.instance.share(
+          ShareParams(
+            files: [XFile(file.path)],
+            text: 'EncQder History Backup',
+          ),
         );
       }
     } catch (e) {
@@ -104,15 +102,18 @@ class SettingsScreen extends StatelessWidget {
       final bytes = await File(path).readAsBytes();
       final archive = ZipDecoder().decodeBytes(bytes);
 
-      String? fileContent;
+      String? jsonContent;
+      String? txtContent;
+
       for (final file in archive) {
-        if (file.isFile && file.name == 'encqder_history.txt') {
-          fileContent = utf8.decode(file.content as List<int>);
-          break;
+        if (file.isFile && file.name == 'encqder_history.json') {
+          jsonContent = utf8.decode(file.content as List<int>);
+        } else if (file.isFile && file.name == 'encqder_history.txt') {
+          txtContent = utf8.decode(file.content as List<int>);
         }
       }
 
-      if (fileContent == null) {
+      if (jsonContent == null && txtContent == null) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Invalid backup file format')),
@@ -122,29 +123,37 @@ class SettingsScreen extends StatelessWidget {
       }
 
       final items = <QrItem>[];
-      final parts = fileContent.split('---');
-      for (final part in parts) {
-        if (part.trim().isEmpty) continue;
-        
-        final lines = part.trim().split('\n');
-        String? dateStr;
-        String? content;
 
-        for (final line in lines) {
-          if (line.startsWith('Date: ')) {
-            dateStr = line.substring('Date: '.length).trim();
-          } else if (line.startsWith('Content: ')) {
-            content = line.substring('Content: '.length).trim();
-          }
+      if (jsonContent != null) {
+        final decodedList = jsonDecode(jsonContent) as List<dynamic>;
+        for (final item in decodedList) {
+          items.add(QrItem.fromJson(item as Map<String, dynamic>));
         }
+      } else if (txtContent != null) {
+        final parts = txtContent.split('---');
+        for (final part in parts) {
+          if (part.trim().isEmpty) continue;
+          
+          final lines = part.trim().split('\n');
+          String? dateStr;
+          String? content;
 
-        if (dateStr != null && content != null) {
-          items.add(QrItem(
-            id: DateTime.now().millisecondsSinceEpoch.toString() + items.length.toString(),
-            data: content,
-            createdAt: DateTime.tryParse(dateStr) ?? DateTime.now(),
-            originType: 'imported',
-          ));
+          for (final line in lines) {
+            if (line.startsWith('Date: ')) {
+              dateStr = line.substring('Date: '.length).trim();
+            } else if (line.startsWith('Content: ')) {
+              content = line.substring('Content: '.length).trim();
+            }
+          }
+
+          if (dateStr != null && content != null) {
+            items.add(QrItem(
+              id: DateTime.now().millisecondsSinceEpoch.toString() + items.length.toString(),
+              data: content,
+              createdAt: DateTime.tryParse(dateStr) ?? DateTime.now(),
+              originType: 'imported',
+            ));
+          }
         }
       }
 

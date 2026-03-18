@@ -39,14 +39,13 @@
 
 ## 🔮 Planned
 
-### Upcoming
-- [ ] **Deployment**: Final audit for Play Store submission.
-- [ ] ** Code Review**: Use code reviewer
-- [ ] ** Perform tests ** : Use Code tester
+### Next Up
+- [x] **Play Store Release**: Complete final pre-launch security and compliance audits.
+- [ ] **Automated Testing**: Implement widget and integration tests to ensure core workflow stability.
 
-### Visual Identity
-- [x] **Custom App Icon**: Deployed brand assets via `flutter_launcher_icons`.
-- [ ] **Splash Screen**: Native splash sequence using `flutter_native_splash`.
+### Brand Identity
+- [x] **App Iconography**: Integrated responsive brand assets using `flutter_launcher_icons`.
+- [ ] **Native Splash Screen**: Implement seamless launch sequences using `flutter_native_splash`.
 
-### Advanced QR
-- [ ] **Batch Scanning**: Support continuous scanning mode for high-volume use cases.
+### Advanced Capabilities
+- [ ] **Continuous Batch Scanning**: Enable high-throughput scanning mode without returning to the home screen.

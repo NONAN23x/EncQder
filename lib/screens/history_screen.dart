@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:gal/gal.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../services/storage_service.dart';
 import '../services/theme_provider.dart';
@@ -542,7 +543,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               Stack(
                 children: [
                   Container(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 48, 16),
+                    padding: EdgeInsets.fromLTRB(16, 16, item.data.contains('://') ? 88 : 48, 16),
                     width: double.infinity,
                     decoration: BoxDecoration(
                       color: Theme.of(context).cardTheme.color,
@@ -566,19 +567,41 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   Positioned(
                     top: 4,
                     right: 4,
-                    child: IconButton(
-                      icon: const Icon(Icons.copy_rounded, size: 20),
-                      tooltip: 'Copy to clipboard',
-                      onPressed: () {
-                        Clipboard.setData(ClipboardData(text: item.data));
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Copied to clipboard'),
-                            behavior: SnackBarBehavior.floating,
-                            duration: Duration(seconds: 2),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (item.data.contains('://'))
+                          IconButton(
+                            icon: const Icon(Icons.open_in_new_rounded, size: 20),
+                            tooltip: 'Open link',
+                            onPressed: () async {
+                              final url = Uri.tryParse(item.data);
+                              if (url != null && await canLaunchUrl(url)) {
+                                await launchUrl(url, mode: LaunchMode.externalApplication);
+                              } else {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Could not open link')),
+                                  );
+                                }
+                              }
+                            },
                           ),
-                        );
-                      },
+                        IconButton(
+                          icon: const Icon(Icons.copy_rounded, size: 20),
+                          tooltip: 'Copy to clipboard',
+                          onPressed: () {
+                            Clipboard.setData(ClipboardData(text: item.data));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Copied to clipboard'),
+                                behavior: SnackBarBehavior.floating,
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -708,13 +731,28 @@ class _ShareOverlayState extends State<ShareOverlay> with SingleTickerProviderSt
       final qrCode = qrValidationResult.qrCode!;
       final painter = QrPainter.withQr(
         qr: qrCode,
-        color: const Color(0xFF000000), // Always black on white for sharing
-        emptyColor: const Color(0xFFFFFFFF),
+        eyeStyle: const QrEyeStyle(
+          eyeShape: QrEyeShape.square,
+          color: Color(0xFF000000),
+        ),
+        dataModuleStyle: const QrDataModuleStyle(
+          dataModuleShape: QrDataModuleShape.square,
+          color: Color(0xFF000000),
+        ),
         gapless: true,
       );
 
-      final picData = await painter.toImageData(
-          1024, format: dart_ui.ImageByteFormat.png);
+      const double imageSize = 1024.0;
+      final pictureRecorder = dart_ui.PictureRecorder();
+      final canvas = Canvas(pictureRecorder);
+      canvas.drawRect(
+        const Rect.fromLTWH(0, 0, imageSize, imageSize),
+        Paint()..color = const Color(0xFFFFFFFF),
+      );
+      painter.paint(canvas, const Size(imageSize, imageSize));
+      final picture = pictureRecorder.endRecording();
+      final image = await picture.toImage(imageSize.toInt(), imageSize.toInt());
+      final picData = await image.toByteData(format: dart_ui.ImageByteFormat.png);
 
       if (picData != null) {
         final tempDir = await getTemporaryDirectory();
@@ -763,9 +801,11 @@ class _ShareOverlayState extends State<ShareOverlay> with SingleTickerProviderSt
                           final file = await _generateImageFile();
                           if (!context.mounted) return;
                           Navigator.pop(context);
-                          await Share.shareXFiles(
-                            [XFile(file.path)],
-                            text: '${widget.item.label.isNotEmpty ? widget.item.label : "QR Code"}\nScanned via EncQder: ${widget.item.data}',
+                          await SharePlus.instance.share(
+                            ShareParams(
+                              files: [XFile(file.path)],
+                              text: '${widget.item.label.isNotEmpty ? widget.item.label : "QR Code"}\nScanned via EncQder: ${widget.item.data}',
+                            ),
                           );
                         } catch (e) {
                           if (!context.mounted) return;
