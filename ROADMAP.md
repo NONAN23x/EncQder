@@ -2,6 +2,11 @@
 
 ## ✅ Completed (March 18, 2026)
 
+### System Integration & Theming
+- **Material You Dynamic Theming**: Configured the application to extract and apply OS-level dynamic color palettes on Android 12+ devices, while maintaining custom light/dark fallbacks.
+- **Focused Camera Scanner**: Restrained the `MobileScanner` barcode capture to a central, framed cutout, effectively ignoring QRs detected in the periphery.
+- **Theme-Aware Overlay**: Engineered a solid, full-opacity scanner overlay that perfectly mimics the underlying `scaffoldBackgroundColor`, adapting continuously to light/dark system themes.
+
 ### Premium UI & Fluidity
 - **Sliding Pill Navigation**: Replaced the static bottom nav with a custom "sliding pill" background that interpolates position and opacity during swiping.
 - **Smart Share Overlay**: Replaced vertical buttons with an animated, blurred share sheet featuring staggered action chips (Save to Gallery / Native Share).

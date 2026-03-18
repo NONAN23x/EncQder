@@ -21,6 +21,8 @@ EncQder gives you three core tools in one swipeable interface:
 
 ## Premium UX Features
 
+- **Dynamic System Theming** — Seamlessly integrates with Android's Material You, inheriting OS-level dynamic colors while ensuring a consistent fallback to custom dark/light modes.
+- **Focused Camera Scanning** — A distraction-free scanning experience that restricts the scan window to a central, themed cutout. 
 - **Fluid Navigation** — A custom "sliding pill" bottom nav that interpolates position and style in real-time as you swipe between screens.
 - **Smart Share Sheet** — An animated, blurred overlay with staggered action chips for one-tap sharing or saving to the device gallery.
 - **Inline Renaming** — Keep your history organized by giving any QR code a custom label (e.g., "Home Wi-Fi", "Office Key").
@@ -66,6 +68,7 @@ lib/
 | `qr_flutter` | QR code rendering |
 | `mobile_scanner` | Camera-based QR scanning |
 | `shared_preferences` | Offline local storage |
+| `dynamic_color` | Material You OS theming support |
 | `intl` | Date/time formatting in history |
 
 ## Roadmap
