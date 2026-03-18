@@ -54,14 +54,19 @@ class QrDisplay extends StatelessWidget {
             decoration: PrettyQrDecoration(
               // ignore: experimental_member_use
               shape: PrettyQrShape.custom(
-                PrettyQrDotsSymbol(color: qrBrush),
-                finderPattern: PrettyQrSquaresSymbol(
+                PrettyQrDotsSymbol(
                   color: qrBrush,
-                  rounding: 1.0,
+                  density: 0.8,
+                  unifiedFinderPattern: false,
+                  unifiedAlignmentPatterns: false,
                 ),
-                alignmentPatterns: PrettyQrSquaresSymbol(
+                finderPattern: PrettyQrSmoothSymbol(
                   color: qrBrush,
-                  rounding: 1.0,
+                  roundFactor: 1.0,
+                ),
+                alignmentPatterns: PrettyQrSmoothSymbol(
+                  color: qrBrush,
+                  roundFactor: 1.0,
                 ),
               ),
               background: Colors.transparent,
