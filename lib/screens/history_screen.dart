@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:qr_flutter/qr_flutter.dart';
+import 'package:pretty_qr_code/pretty_qr_code.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:gal/gal.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -721,49 +721,57 @@ class _ShareOverlayState extends State<ShareOverlay> with SingleTickerProviderSt
   }
 
   Future<File> _generateImageFile() async {
-    final qrValidationResult = QrValidator.validate(
-      data: widget.item.data,
-      version: QrVersions.auto,
-      errorCorrectionLevel: QrErrorCorrectLevel.L,
-    );
-
-    if (qrValidationResult.status == QrValidationStatus.valid) {
-      final qrCode = qrValidationResult.qrCode!;
-      final painter = QrPainter.withQr(
-        qr: qrCode,
-        eyeStyle: const QrEyeStyle(
-          eyeShape: QrEyeShape.square,
-          color: Color(0xFF000000),
-        ),
-        dataModuleStyle: const QrDataModuleStyle(
-          dataModuleShape: QrDataModuleShape.square,
-          color: Color(0xFF000000),
-        ),
-        gapless: true,
+    try {
+      final qrCode = QrCode.fromData(
+        data: widget.item.data,
+        errorCorrectLevel: QrErrorCorrectLevel.Q,
       );
 
-      const double imageSize = 1024.0;
-      final pictureRecorder = dart_ui.PictureRecorder();
-      final canvas = Canvas(pictureRecorder);
-      canvas.drawRect(
-        const Rect.fromLTWH(0, 0, imageSize, imageSize),
-        Paint()..color = const Color(0xFFFFFFFF),
+      final qrImage = QrImage(qrCode);
+      
+      const qrBrush = PrettyQrBrush.gradient(
+        gradient: RadialGradient(
+          colors: [
+            Color(0xFF1565C0), // Colors.blue.shade800
+            Color(0xFF000000), // black
+          ],
+        ),
       );
-      painter.paint(canvas, const Size(imageSize, imageSize));
-      final picture = pictureRecorder.endRecording();
-      final image = await picture.toImage(imageSize.toInt(), imageSize.toInt());
-      final picData = await image.toByteData(format: dart_ui.ImageByteFormat.png);
 
-      if (picData != null) {
+      const decoration = PrettyQrDecoration(
+        // ignore: experimental_member_use
+        shape: PrettyQrShape.custom(
+          PrettyQrDotsSymbol(color: qrBrush),
+          finderPattern: PrettyQrSquaresSymbol(
+            color: qrBrush,
+            rounding: 1.0,
+          ),
+          alignmentPatterns: PrettyQrSquaresSymbol(
+            color: qrBrush,
+            rounding: 1.0,
+          ),
+        ),
+        background: Color(0xFFFFFFFF),
+        quietZone: PrettyQrQuietZone.modules(2),
+      );
+
+      final configuration = createLocalImageConfiguration(context);
+      final bytes = await qrImage.toImageAsBytes(
+        size: 1024,
+        decoration: decoration,
+        configuration: configuration,
+      );
+
+      if (bytes != null) {
         final tempDir = await getTemporaryDirectory();
         final file = File('${tempDir.path}/encqder_${widget.item.id}.png');
-        await file.writeAsBytes(picData.buffer.asUint8List());
+        await file.writeAsBytes(bytes.buffer.asUint8List());
         return file;
       } else {
         throw Exception('Failed to generate image data');
       }
-    } else {
-      throw Exception('Image generation failed: Invalid QR data');
+    } catch (e) {
+      throw Exception('Image generation failed: $e');
     }
   }
 

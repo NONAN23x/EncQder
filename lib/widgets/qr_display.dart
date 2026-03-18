@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:qr_flutter/qr_flutter.dart';
+import 'package:pretty_qr_code/pretty_qr_code.dart';
 
 class QrDisplay extends StatelessWidget {
   final String data;
@@ -12,8 +12,15 @@ class QrDisplay extends StatelessWidget {
     // Determine qr color based on theme
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final qrColor = isDark ? Colors.white : Colors.black;
-    // For the QR code itself, the background must contrast with the foreground.
-    // However, qr_flutter handles transparent backgrounds well.
+    
+    final qrBrush = PrettyQrBrush.gradient(
+      gradient: RadialGradient(
+        colors: [
+          isDark ? Colors.blue.shade200 : Colors.blue.shade800,
+          qrColor,
+        ],
+      ),
+    );
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -38,16 +45,28 @@ class QrDisplay extends StatelessWidget {
       ),
       child: AspectRatio(
         aspectRatio: 1,
-        child: QrImageView(
-          data: data,
-          version: QrVersions.auto,
-          size: size,
-          eyeStyle: QrEyeStyle(eyeShape: QrEyeShape.square, color: qrColor),
-          dataModuleStyle: QrDataModuleStyle(
-            dataModuleShape: QrDataModuleShape.square,
-            color: qrColor,
+        child: SizedBox(
+          width: size,
+          height: size,
+          child: PrettyQrView.data(
+            data: data,
+            errorCorrectLevel: QrErrorCorrectLevel.Q,
+            decoration: PrettyQrDecoration(
+              // ignore: experimental_member_use
+              shape: PrettyQrShape.custom(
+                PrettyQrDotsSymbol(color: qrBrush),
+                finderPattern: PrettyQrSquaresSymbol(
+                  color: qrBrush,
+                  rounding: 1.0,
+                ),
+                alignmentPatterns: PrettyQrSquaresSymbol(
+                  color: qrBrush,
+                  rounding: 1.0,
+                ),
+              ),
+              background: Colors.transparent,
+            ),
           ),
-          backgroundColor: Colors.transparent,
         ),
       ),
     );

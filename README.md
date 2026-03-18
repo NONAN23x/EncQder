@@ -65,7 +65,7 @@ lib/
 
 | Package | Purpose |
 |---|---|
-| `qr_flutter` | QR code rendering |
+| `pretty_qr_code` | QR code rendering |
 | `mobile_scanner` | Camera-based QR scanning |
 | `shared_preferences` | Offline local storage |
 | `dynamic_color` | Material You OS theming support |
