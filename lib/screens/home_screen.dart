@@ -149,6 +149,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Align(
                 alignment: Alignment.centerLeft,
                 widthFactor: t,
+                heightFactor: 1.0,
                 child: Opacity(
                   opacity: t.clamp(0.0, 1.0),
                   child: Row(
