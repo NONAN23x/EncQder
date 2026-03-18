@@ -38,83 +38,86 @@ class _InputScreenState extends State<InputScreen> {
                     _currentInput = value;
                   });
                 },
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   hintText: 'Enter text, link, or data here...',
+                  suffixIcon: _currentInput.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.cancel_rounded),
+                          onPressed: () {
+                            _textController.clear();
+                            setState(() {
+                              _currentInput = '';
+                            });
+                          },
+                        )
+                      : null,
                 ),
               ),
               const SizedBox(height: 32),
 
               if (_currentInput.isNotEmpty) ...[
                 const Spacer(),
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 1,
-                      child: TextButton(
-                        onPressed: () {
-                          _textController.clear();
-                          setState(() {
-                            _currentInput = '';
-                          });
-                        },
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          foregroundColor: Theme.of(context).colorScheme.error,
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    if (_currentInput.trim().isNotEmpty) {
+                      final inputData = _currentInput.trim();
+                      
+                      // Show loading
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (context) => const Center(
+                          child: CircularProgressIndicator(),
                         ),
-                        child: const Text('Clear'),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      flex: 2,
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          if (_currentInput.trim().isNotEmpty) {
-                            final inputData = _currentInput.trim();
-                            
-                            // Show loading
-                            showDialog(
-                              context: context,
-                              barrierDismissible: false,
-                              builder: (context) => const Center(
-                                child: CircularProgressIndicator(),
-                              ),
-                            );
+                      );
 
-                            await StorageService().saveItem(
-                              inputData,
-                            ); // generated type defaults to generated
+                      await StorageService().saveItem(
+                        inputData,
+                      ); // generated type defaults to generated
 
-                            if (!context.mounted) return;
-                            Navigator.pop(context); // Dismiss loading
+                      if (!context.mounted) return;
+                      Navigator.pop(context); // Dismiss loading
 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Saved to History!'),
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );                            _textController.clear();
-                            setState(() {
-                              _currentInput = '';
-                            });
-                          }
-                        },
-                        child: const Text('Save to History'),
-                      ),
-                    ),
-                  ],
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Saved to History!'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );                            
+                      _textController.clear();
+                      setState(() {
+                        _currentInput = '';
+                      });
+                    }
+                  },
+                  icon: const Icon(Icons.save_rounded),
+                  label: const Text('Save to History'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
                 ),
               ] else ...[
                 Expanded(
                   child: Center(
-                    child: Text(
-                      'Type something to\ngenerate a QR code.',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: 0.5),
-                      ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.qr_code_2_rounded,
+                          size: 64,
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Type something to\ngenerate a QR code.',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.5),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),

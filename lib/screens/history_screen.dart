@@ -608,7 +608,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: TextButton.icon(
+                    child: OutlinedButton.icon(
                       onPressed: () async {
                         await StorageService().removeItem(item.id);
                         if (!context.mounted) return;
@@ -617,8 +617,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       },
                       icon: const Icon(Icons.delete_outline),
                       label: const Text('Delete'),
-                      style: TextButton.styleFrom(
+                      style: OutlinedButton.styleFrom(
                         foregroundColor: Theme.of(context).colorScheme.error,
+                        side: BorderSide(color: Theme.of(context).colorScheme.error.withValues(alpha: 0.5)),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
