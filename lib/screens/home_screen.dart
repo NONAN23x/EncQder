@@ -97,7 +97,7 @@ class _HomeScreenState extends State<HomeScreen> {
         double currentPage = _pageController.hasClients
             ? (_pageController.page ?? 1.0)
             : 1.0;
-        bool isSelected = (currentPage.round() == index);
+        final double t = (1.0 - (currentPage - index).abs()).clamp(0.0, 1.0);
 
         return GestureDetector(
           onTap: () => _navigateToPage(index),
@@ -105,9 +105,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: isSelected
-                  ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
-                  : Colors.transparent,
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: t * 0.1),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
@@ -115,22 +113,31 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Icon(
                   icon,
-                  color: isSelected
-                      ? Theme.of(context).colorScheme.primary
-                      : Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: 0.5),
-                ),
-                if (isSelected) ...[
-                  const SizedBox(width: 8),
-                  Text(
-                    label,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  color: Color.lerp(
+                    Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                    Theme.of(context).colorScheme.primary,
+                    t,
                   ),
-                ],
+                ),
+                AnimatedSize(
+                  duration: Duration.zero,
+                  child: t > 0.05
+                      ? Opacity(
+                          opacity: t.clamp(0.0, 1.0),
+                          child: Row(mainAxisSize: MainAxisSize.min, children: [
+                            const SizedBox(width: 8),
+                            Text(label, style: TextStyle(
+                              color: Color.lerp(
+                                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                                Theme.of(context).colorScheme.primary,
+                                t,
+                              ),
+                              fontWeight: FontWeight.w600,
+                            )),
+                          ]),
+                        )
+                      : const SizedBox.shrink(),
+                ),
               ],
             ),
           ),

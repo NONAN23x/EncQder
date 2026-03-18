@@ -6,19 +6,22 @@ class QrItem {
   final String data;
   final DateTime createdAt;
   final String originType; // "generated" or "scanned"
+  String label;
 
   QrItem({
     required this.id,
     required this.data,
     required this.createdAt,
     this.originType = 'generated', // Default for older items
-  });
+    String? label,
+  }) : label = label ?? '';
 
   Map<String, dynamic> toJson() => {
         'id': id,
         'data': data,
         'createdAt': createdAt.toIso8601String(),
         'originType': originType,
+        'label': label,
       };
 
   factory QrItem.fromJson(Map<String, dynamic> json) => QrItem(
@@ -26,6 +29,7 @@ class QrItem {
         data: json['data'],
         createdAt: DateTime.parse(json['createdAt']),
         originType: json['originType'] ?? 'generated', // Fallback for backward compatibility
+        label: json['label'] as String? ?? '',
       );
 }
 
@@ -64,17 +68,39 @@ class StorageService {
     // Check for duplicates to bring them to top
     currentHistory.removeWhere((item) => item.data == data);
 
+    final existingLabels = currentHistory
+        .map((e) => e.label)
+        .where((l) => l.startsWith('QR Code'))
+        .toList();
+
+    int nextNumber = 1;
+    String candidateLabel = 'QR Code';
+    while (existingLabels.contains(candidateLabel)) {
+      nextNumber++;
+      candidateLabel = 'QR Code $nextNumber';
+    }
+
     final newItem = QrItem(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       data: data,
       createdAt: DateTime.now(),
       originType: originType,
+      label: candidateLabel,
     );
 
     // Add to top of list
     currentHistory.insert(0, newItem);
 
     await _saveHistory(currentHistory);
+  }
+
+  Future<void> updateLabel(String id, String newLabel) async {
+    final List<QrItem> history = await getHistory();
+    final index = history.indexWhere((e) => e.id == id);
+    if (index != -1) {
+      history[index].label = newLabel.trim();
+      await _saveHistory(history);
+    }
   }
 
   Future<void> removeItem(String id) async {

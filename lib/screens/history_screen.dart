@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:gal/gal.dart';
 
 import '../services/storage_service.dart';
 import '../services/theme_provider.dart';
@@ -387,7 +388,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            item.data,
+                            item.label.isNotEmpty ? item.label : 'QR Code',
                             style: const TextStyle(fontWeight: FontWeight.w600),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -417,6 +418,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
+                      item.data,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.7),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
                       DateFormat('MMM d, yyyy • h:mm a').format(item.createdAt),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(
@@ -441,7 +453,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: Theme.of(context).scaffoldBackgroundColor,
@@ -463,10 +476,59 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   ),
                 ),
               ),
-              Text(
-                'QR Code Details',
-                style: Theme.of(context).textTheme.headlineMedium,
-                textAlign: TextAlign.center,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: Text(
+                      item.label.isNotEmpty ? item.label : 'QR Code',
+                      style: Theme.of(context).textTheme.headlineMedium,
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.edit, size: 18),
+                    onPressed: () {
+                      final controller = TextEditingController(text: item.label);
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Rename'),
+                          content: TextField(
+                            controller: controller,
+                            decoration: const InputDecoration(
+                              hintText: 'Enter new label',
+                            ),
+                            autofocus: true,
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('Cancel'),
+                            ),
+                            TextButton(
+                              onPressed: () async {
+                                final newLabel = controller.text.trim();
+                                await StorageService().updateLabel(item.id, newLabel);
+                                setModalState(() {
+                                  item.label = newLabel;
+                                });
+                                if (context.mounted) {
+                                  Navigator.pop(context);
+                                }
+                                _loadHistory();
+                              },
+                              child: const Text('Save'),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
               const SizedBox(height: 24),
               Center(
@@ -522,98 +584,23 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ],
               ),
               const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () async {
-                        try {
-                          // Show loading indicator
-                          showDialog(
-                            context: context,
-                            barrierDismissible: false,
-                            builder: (context) => const Center(
-                              child: CircularProgressIndicator(),
-                            ),
-                          );
-
-                          // Generate image
-                          final qrValidationResult = QrValidator.validate(
-                            data: item.data,
-                            version: QrVersions.auto,
-                            errorCorrectionLevel: QrErrorCorrectLevel.L,
-                          );
-
-                          if (qrValidationResult.status == QrValidationStatus.valid) {
-                            final qrCode = qrValidationResult.qrCode!;
-                            final painter = QrPainter.withQr(
-                              qr: qrCode,
-                              color: const Color(0xFF000000), // Always black on white for sharing
-                              gapless: true,
-                            );
-
-                            // We render a high res version based on the module count
-                            // Higher resolution = better quality when shared
-                            final picData = await painter.toImageData(
-                                1024, format: dart_ui.ImageByteFormat.png);
-
-                            if (picData != null) {
-                              // Get temp directory
-                              final tempDir = await getTemporaryDirectory();
-                              final file = File('${tempDir.path}/encqder_${item.id}.png');
-                              await file.writeAsBytes(picData.buffer.asUint8List());
-
-                              if (!context.mounted) return;
-                              Navigator.pop(context); // Dismiss loading
-
-                              // Share the file
-                              await Share.shareXFiles(
-                                [XFile(file.path)],
-                                text: 'Scanned via EncQder: ${item.data}',
-                              );
-                            } else {
-                              throw Exception('Failed to generate image data');
-                            }
-                          } else {
-                            throw Exception('Image generation failed: Invalid QR data');
-                          }
-                        } catch (e) {
-                          if (context.mounted) {
-                            Navigator.pop(context); // Dismiss loading if it's showing
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Failed to share image: $e'),
-                                backgroundColor: Theme.of(context).colorScheme.error,
-                              ),
-                            );
-                            // Fallback to text sharing
-                            Share.share(item.data);
-                          }
-                        }
-                      },
-                      icon: const Icon(Icons.share_rounded),
-                      label: const Text('Share'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    PageRouteBuilder(
+                      opaque: false,
+                      pageBuilder: (context, animation, secondaryAnimation) => ShareOverlay(item: item),
                     ),
+                  );
+                },
+                icon: const Icon(Icons.share_rounded),
+                label: const Text('Share'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: const Text('Close'),
-                    ),
-                  ),
-                ],
+                ),
               ),
               const SizedBox(height: 16),
               TextButton(
@@ -632,6 +619,207 @@ class _HistoryScreenState extends State<HistoryScreen> {
             ],
           ),
         ),
+      ),
+      ),
+    );
+  }
+}
+
+class ShareOverlay extends StatefulWidget {
+  final QrItem item;
+
+  const ShareOverlay({super.key, required this.item});
+
+  @override
+  State<ShareOverlay> createState() => _ShareOverlayState();
+}
+
+class _ShareOverlayState extends State<ShareOverlay> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<Offset> _slideBottom;
+  late final Animation<Offset> _slideTop;
+  late final Animation<double> _fadeBottom;
+  late final Animation<double> _fadeTop;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 280),
+    );
+
+    _slideBottom = Tween<Offset>(begin: const Offset(0, 0.4), end: Offset.zero).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.71, curve: Curves.easeOutCubic),
+      ),
+    );
+    _fadeBottom = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.71, curve: Curves.easeIn),
+      ),
+    );
+
+    _slideTop = Tween<Offset>(begin: const Offset(0, 0.4), end: Offset.zero).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.29, 1.0, curve: Curves.easeOutCubic),
+      ),
+    );
+    _fadeTop = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.29, 1.0, curve: Curves.easeIn),
+      ),
+    );
+
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<File> _generateImageFile() async {
+    final qrValidationResult = QrValidator.validate(
+      data: widget.item.data,
+      version: QrVersions.auto,
+      errorCorrectionLevel: QrErrorCorrectLevel.L,
+    );
+
+    if (qrValidationResult.status == QrValidationStatus.valid) {
+      final qrCode = qrValidationResult.qrCode!;
+      final painter = QrPainter.withQr(
+        qr: qrCode,
+        color: const Color(0xFF000000), // Always black on white for sharing
+        emptyColor: const Color(0xFFFFFFFF),
+        gapless: true,
+      );
+
+      final picData = await painter.toImageData(
+          1024, format: dart_ui.ImageByteFormat.png);
+
+      if (picData != null) {
+        final tempDir = await getTemporaryDirectory();
+        final file = File('${tempDir.path}/encqder_${widget.item.id}.png');
+        await file.writeAsBytes(picData.buffer.asUint8List());
+        return file;
+      } else {
+        throw Exception('Failed to generate image data');
+      }
+    } else {
+      throw Exception('Image generation failed: Invalid QR data');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: BackdropFilter(
+              filter: dart_ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: Container(
+                color: Colors.black.withValues(alpha: 0.45),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 24,
+            right: 24,
+            bottom: 40 + MediaQuery.of(context).padding.bottom + 64, // Adjusted relative to the original button
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                FadeTransition(
+                  opacity: _fadeTop,
+                  child: SlideTransition(
+                    position: _slideTop,
+                    child: FilledButton.icon(
+                      onPressed: () async {
+                        try {
+                          final file = await _generateImageFile();
+                          if (!context.mounted) return;
+                          Navigator.pop(context);
+                          await Share.shareXFiles(
+                            [XFile(file.path)],
+                            text: 'Scanned via EncQder: ${widget.item.data}',
+                          );
+                        } catch (e) {
+                          if (!context.mounted) return;
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Failed to share: $e')),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.ios_share_rounded),
+                      label: const Text('Share'),
+                      style: FilledButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                FadeTransition(
+                  opacity: _fadeBottom,
+                  child: SlideTransition(
+                    position: _slideBottom,
+                    child: FilledButton.icon(
+                      onPressed: () async {
+                        try {
+                          final file = await _generateImageFile();
+                          final access = await Gal.hasAccess();
+                          if (!access) {
+                            final request = await Gal.requestAccess();
+                            if (!request) {
+                               if (context.mounted) Navigator.pop(context);
+                               return;
+                            }
+                          }
+                          await Gal.putImage(file.path, album: 'EncQder');
+                          if (!context.mounted) return;
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Saved to Gallery ✓'),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        } catch (e) {
+                          if (!context.mounted) return;
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Failed to save to gallery: $e')),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.save_alt_rounded),
+                      label: const Text('Save to Gallery'),
+                      style: FilledButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

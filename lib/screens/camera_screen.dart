@@ -1,12 +1,6 @@
 import 'dart:async';
-import 'dart:io';
-import 'dart:ui' as dart_ui;
-
 import 'package:flutter/material.dart';
-import 'package:gal/gal.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 
 import '../services/storage_service.dart';
 
@@ -79,51 +73,6 @@ class _CameraScreenState extends State<CameraScreen> {
     }
   }
 
-  Future<void> _generateAndSaveImageToGallery(String data) async {
-    try {
-      final qrValidationResult = QrValidator.validate(
-        data: data,
-        version: QrVersions.auto,
-        errorCorrectionLevel: QrErrorCorrectLevel.L,
-      );
-
-      if (qrValidationResult.status == QrValidationStatus.valid) {
-        final qrCode = qrValidationResult.qrCode!;
-        final painter = QrPainter.withQr(
-          qr: qrCode,
-          color: const Color(0xFF000000), // Default high-contrast dark
-          emptyColor: const Color(0xFFFFFFFF), // Force white background for gallery
-          gapless: true,
-        );
-
-        final picData = await painter.toImageData(
-            1024, format: dart_ui.ImageByteFormat.png);
-
-        if (picData != null) {
-          final tempDir = await getTemporaryDirectory();
-          final file = File('${tempDir.path}/encqder_${DateTime.now().millisecondsSinceEpoch}.jpg');
-          await file.writeAsBytes(picData.buffer.asUint8List());
-
-          // Check permissions
-          final access = await Gal.hasAccess();
-          if (!access) {
-            final request = await Gal.requestAccess();
-            if (!request) return; // User denied
-          }
-
-          await Gal.putImage(file.path, album: 'EncQder');
-          
-          // Cleanup temp
-          if (await file.exists()) {
-             await file.delete();
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('Failed to save to gallery: $e');
-    }
-  }
-
   void _showResultOverlay(String rawData) {
     showModalBottomSheet(
       context: context,
@@ -191,18 +140,16 @@ class _CameraScreenState extends State<CameraScreen> {
                   );
 
                   await StorageService().saveItem(rawData, originType: 'scanned');
-                  await _generateAndSaveImageToGallery(rawData);
-                  
+
                   if (!context.mounted) return;
                   Navigator.pop(context); // Dismiss loading
-                  
+
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Saved to History & Gallery!'),
+                      content: Text('Saved to History!'),
                       behavior: SnackBarBehavior.floating,
                     ),
-                  );
-                  Navigator.pop(context); // Close sheet
+                  );                  Navigator.pop(context); // Close sheet
                   setState(() {
                     _isProcessing = false;
                   });

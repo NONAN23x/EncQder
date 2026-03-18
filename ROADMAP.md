@@ -33,5 +33,4 @@
 - [ ] **Splash Screen**: Native splash sequence using `flutter_native_splash`.
 
 ### Advanced QR
-- [ ] **Color Customization**: Allow users to change foreground/background colors for generated QRs.
 - [ ] **Batch Scanning**: Support continuous scanning mode for high-volume use cases.
