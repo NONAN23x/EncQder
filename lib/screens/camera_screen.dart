@@ -128,47 +128,68 @@ class _CameraScreenState extends State<CameraScreen> {
                 ),
               ),
               const SizedBox(height: 32),
-              ElevatedButton(
-                onPressed: () async {
-                  // Show loading
-                  showDialog(
-                    context: context,
-                    barrierDismissible: false,
-                    builder: (context) => const Center(
-                      child: CircularProgressIndicator(),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        setState(() {
+                          _isProcessing = false;
+                        });
+                      },
+                      icon: const Icon(Icons.delete_outline),
+                      label: const Text('Discard'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Theme.of(context).colorScheme.error,
+                        side: BorderSide(color: Theme.of(context).colorScheme.error.withValues(alpha: 0.5)),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
                     ),
-                  );
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        // Show loading
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (context) => const Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                        );
 
-                  await StorageService().saveItem(rawData, originType: 'scanned');
+                        await StorageService().saveItem(rawData, originType: 'scanned');
 
-                  if (!context.mounted) return;
-                  Navigator.pop(context); // Dismiss loading
+                        if (!context.mounted) return;
+                        Navigator.pop(context); // Dismiss loading
 
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Saved to History!'),
-                      behavior: SnackBarBehavior.floating,
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Saved to History!'),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                        Navigator.pop(context); // Close sheet
+                        setState(() {
+                          _isProcessing = false;
+                        });
+                      },
+                      icon: const Icon(Icons.save_rounded),
+                      label: const Text('Save'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
                     ),
-                  );                  Navigator.pop(context); // Close sheet
-                  setState(() {
-                    _isProcessing = false;
-                  });
-                },
-                child: const Text('Save to History'),
-              ),
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  setState(() {
-                    _isProcessing = false;
-                  });
-                },
-                style: TextButton.styleFrom(
-                  foregroundColor: Theme.of(context).colorScheme.error,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: const Text('Discard'),
+                  ),
+                ],
               ),
             ],
           ),
