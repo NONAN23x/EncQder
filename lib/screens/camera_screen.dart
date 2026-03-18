@@ -218,7 +218,7 @@ class _CameraScreenState extends State<CameraScreen> {
     final cutoutRect = Rect.fromLTWH(cutoutLeft, cutoutTop, cutoutSize, cutoutSize);
 
     return Scaffold(
-      backgroundColor: Colors.black, // Deep black base
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor, // Deep black base
       body: GestureDetector(
         onTapDown: (_) => _resetIdleTimer(),
         onPanDown: (_) => _resetIdleTimer(),
@@ -228,6 +228,7 @@ class _CameraScreenState extends State<CameraScreen> {
             // 1. The actual Camera feed
             MobileScanner(
               controller: _scannerController,
+              scanWindow: cutoutRect,
               onDetect: _handleBarcode,
             ),
 
@@ -235,7 +236,7 @@ class _CameraScreenState extends State<CameraScreen> {
             CustomPaint(
               painter: _ScannerOverlayPainter(
                 cutoutRect: cutoutRect,
-                overlayColor: Colors.black.withValues(alpha: 0.7), // Sleek semi-transparent black
+                overlayColor: Theme.of(context).scaffoldBackgroundColor, // Sleek semi-transparent black
               ),
             ),
             

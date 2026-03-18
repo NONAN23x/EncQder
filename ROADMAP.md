@@ -36,6 +36,8 @@
 
 ### Upcoming
 - [ ] **Deployment**: Final audit for Play Store submission.
+- [ ] ** Code Review**: Use code reviewer
+- [ ] ** Perform tests ** : Use Code tester
 
 ### Visual Identity
 - [x] **Custom App Icon**: Deployed brand assets via `flutter_launcher_icons`.

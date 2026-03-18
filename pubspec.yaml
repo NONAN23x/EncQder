@@ -44,6 +44,7 @@ dependencies:
   gal: ^2.3.2
   archive: ^4.0.9
   file_picker: ^10.3.10
+  dynamic_color: ^1.8.1
 
 dev_dependencies:
   flutter_test:
