@@ -24,7 +24,7 @@ class HistoryScreen extends StatefulWidget {
   State<HistoryScreen> createState() => _HistoryScreenState();
 }
 
-enum FilterType { all, month, year }
+enum FilterType { all, day, month, year }
 
 class _HistoryScreenState extends State<HistoryScreen> {
   List<QrItem> _history = [];
@@ -37,7 +37,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
   List<QrItem> get _filteredAndSortedHistory {
     List<QrItem> items = List.from(_history);
 
-    if (_filterType == FilterType.month && _filterDate != null) {
+    if (_filterType == FilterType.day && _filterDate != null) {
+      items = items.where((item) {
+        return item.createdAt.year == _filterDate!.year &&
+               item.createdAt.month == _filterDate!.month &&
+               item.createdAt.day == _filterDate!.day;
+      }).toList();
+    } else if (_filterType == FilterType.month && _filterDate != null) {
       items = items.where((item) {
         return item.createdAt.year == _filterDate!.year &&
                item.createdAt.month == _filterDate!.month;
@@ -179,6 +185,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 _buildFilterPill('All', FilterType.all),
+                _buildFilterPill('Day', FilterType.day),
                 _buildFilterPill('Month', FilterType.month),
                 _buildFilterPill('Year', FilterType.year),
               ],
@@ -193,9 +200,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 scrollDirection: Axis.horizontal,
                 child: Chip(
                   label: Text(
-                    _filterType == FilterType.month
-                        ? DateFormat('MMM yyyy').format(_filterDate!)
-                        : DateFormat('yyyy').format(_filterDate!),
+                    _filterType == FilterType.day
+                        ? DateFormat('MMM d, yyyy').format(_filterDate!)
+                        : _filterType == FilterType.month
+                            ? DateFormat('MMM yyyy').format(_filterDate!)
+                            : DateFormat('yyyy').format(_filterDate!),
                     style: const TextStyle(fontSize: 12),
                   ),
                   onDeleted: () {
@@ -261,7 +270,20 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     final initialDate = _filterDate ?? DateTime.now();
 
-    if (type == FilterType.year) {
+    if (type == FilterType.day) {
+      final selectedDate = await showDatePicker(
+        context: context,
+        initialDate: initialDate,
+        firstDate: DateTime(2000),
+        lastDate: DateTime.now(),
+      );
+      if (selectedDate != null) {
+        setState(() {
+          _filterType = FilterType.day;
+          _filterDate = selectedDate;
+        });
+      }
+    } else if (type == FilterType.year) {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -541,6 +563,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               ),
               const SizedBox(height: 24),
               Stack(
+                alignment: Alignment.centerRight,
                 children: [
                   Container(
                     padding: EdgeInsets.fromLTRB(16, 16, item.data.contains('://') ? 88 : 48, 16),
@@ -559,14 +582,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             : Colors.transparent,
                       ),
                     ),
-                    child: SelectableText(
+                    child: Text(
                       item.data,
                       style: Theme.of(context).textTheme.bodyLarge,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  Positioned(
-                    top: 4,
-                    right: 4,
+                  Padding(
+                    padding: const EdgeInsets.only(right: 4),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [

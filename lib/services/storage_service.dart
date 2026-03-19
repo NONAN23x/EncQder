@@ -7,6 +7,7 @@ class QrItem {
   final DateTime createdAt;
   final String originType; // "generated" or "scanned"
   String label;
+  final Map<String, dynamic> extraData;
 
   QrItem({
     required this.id,
@@ -14,23 +15,40 @@ class QrItem {
     required this.createdAt,
     this.originType = 'generated', // Default for older items
     String? label,
-  }) : label = label ?? '';
+    Map<String, dynamic>? extraData,
+  }) : label = label ?? '',
+       extraData = extraData ?? <String, dynamic>{};
 
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'data': data,
-        'createdAt': createdAt.toIso8601String(),
-        'originType': originType,
-        'label': label,
-      };
+  Map<String, dynamic> toJson() {
+    final map = <String, dynamic>{
+      'id': id,
+      'data': data,
+      'createdAt': createdAt.toIso8601String(),
+      'originType': originType,
+      'label': label,
+    };
+    map.addAll(extraData);
+    return map;
+  }
 
-  factory QrItem.fromJson(Map<String, dynamic> json) => QrItem(
-        id: json['id'],
-        data: json['data'],
-        createdAt: DateTime.parse(json['createdAt']),
-        originType: json['originType'] ?? 'generated', // Fallback for backward compatibility
-        label: json['label'] as String? ?? '',
-      );
+  factory QrItem.fromJson(Map<String, dynamic> json) {
+    final standardKeys = {'id', 'data', 'createdAt', 'originType', 'label'};
+    final extra = <String, dynamic>{};
+    for (final key in json.keys) {
+      if (!standardKeys.contains(key)) {
+        extra[key] = json[key];
+      }
+    }
+
+    return QrItem(
+      id: json['id'],
+      data: json['data'],
+      createdAt: DateTime.parse(json['createdAt']),
+      originType: json['originType'] ?? 'generated', // Fallback for backward compatibility
+      label: json['label'] as String? ?? '',
+      extraData: extra,
+    );
+  }
 }
 
 class StorageService {
