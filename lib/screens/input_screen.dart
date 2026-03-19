@@ -61,7 +61,7 @@ class _InputScreenState extends State<InputScreen> with AutomaticKeepAliveClient
 
               if (_currentInput.isNotEmpty) ...[
                 const Spacer(),
-                ElevatedButton.icon(
+                FilledButton.icon(
                   onPressed: () async {
                     if (_currentInput.trim().isNotEmpty) {
                       final inputData = _currentInput.trim();
@@ -96,7 +96,7 @@ class _InputScreenState extends State<InputScreen> with AutomaticKeepAliveClient
                   },
                   icon: const Icon(Icons.save_rounded),
                   label: const Text('Save to History'),
-                  style: ElevatedButton.styleFrom(
+                  style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                 ),

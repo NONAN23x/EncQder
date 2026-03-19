@@ -28,8 +28,8 @@ class _HomeScreenState extends State<HomeScreen> {
   void _navigateToPage(int page) {
     _pageController.animateToPage(
       page,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOutCubic,
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOutCubicEmphasized,
     );
   }
 

@@ -653,7 +653,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: ElevatedButton.icon(
+                    child: FilledButton.icon(
                       onPressed: () {
                         Navigator.of(context).push(
                           PageRouteBuilder(
@@ -664,7 +664,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       },
                       icon: const Icon(Icons.share_rounded),
                       label: const Text('Share'),
-                      style: ElevatedButton.styleFrom(
+                      style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),

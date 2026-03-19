@@ -152,7 +152,7 @@ class _CameraScreenState extends State<CameraScreen> {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: ElevatedButton.icon(
+                    child: FilledButton.icon(
                       onPressed: () async {
                         // Show loading
                         showDialog(
@@ -181,7 +181,7 @@ class _CameraScreenState extends State<CameraScreen> {
                       },
                       icon: const Icon(Icons.save_rounded),
                       label: const Text('Save'),
-                      style: ElevatedButton.styleFrom(
+                      style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),

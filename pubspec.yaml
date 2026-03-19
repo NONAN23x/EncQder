@@ -46,6 +46,7 @@ dependencies:
   dynamic_color: ^1.8.1
   url_launcher: ^6.3.2
   pretty_qr_code: ^3.6.0
+  google_fonts: ^8.0.2
 
 dev_dependencies:
   flutter_test:
