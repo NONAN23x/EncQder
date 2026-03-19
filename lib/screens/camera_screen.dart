@@ -13,7 +13,7 @@ class CameraScreen extends StatefulWidget {
   State<CameraScreen> createState() => _CameraScreenState();
 }
 
-class _CameraScreenState extends State<CameraScreen> {
+class _CameraScreenState extends State<CameraScreen> with AutomaticKeepAliveClientMixin {
   final MobileScannerController _scannerController = MobileScannerController(
     detectionSpeed: DetectionSpeed.noDuplicates,
     facing: CameraFacing.back,
@@ -22,6 +22,9 @@ class _CameraScreenState extends State<CameraScreen> {
   bool _isProcessing = false;
   Timer? _idleTimer;
   static const _idleTimeout = Duration(minutes: 2);
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -204,6 +207,7 @@ class _CameraScreenState extends State<CameraScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     // Determine screen size for central cutout
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
@@ -222,9 +226,10 @@ class _CameraScreenState extends State<CameraScreen> {
       body: GestureDetector(
         onTapDown: (_) => _resetIdleTimer(),
         onPanDown: (_) => _resetIdleTimer(),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
+        child: ClipRect(
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
             // 1. The actual Camera feed
             MobileScanner(
               controller: _scannerController,
@@ -296,7 +301,7 @@ class _CameraScreenState extends State<CameraScreen> {
           ],
         ),
       ),
-    );
+    ));
   }
 }
 

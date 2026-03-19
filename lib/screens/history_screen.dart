@@ -26,13 +26,16 @@ class HistoryScreen extends StatefulWidget {
 
 enum FilterType { all, day, month, year }
 
-class _HistoryScreenState extends State<HistoryScreen> {
+class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveClientMixin {
   List<QrItem> _history = [];
   bool _isLoading = true;
 
   FilterType _filterType = FilterType.all;
   DateTime? _filterDate;
   bool _isAscending = false;
+
+  @override
+  bool get wantKeepAlive => true;
 
   List<QrItem> get _filteredAndSortedHistory {
     List<QrItem> items = List.from(_history);
@@ -83,6 +86,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('EncQder History'),
