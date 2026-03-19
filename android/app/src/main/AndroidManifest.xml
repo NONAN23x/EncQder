@@ -40,6 +40,10 @@
         <!-- If your app checks for http or https URLs -->
         <intent>
             <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="upi" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
             <data android:scheme="https" />
         </intent>
         <intent>

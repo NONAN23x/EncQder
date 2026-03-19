@@ -884,7 +884,7 @@ class _ShareOverlayState extends State<ShareOverlay> with SingleTickerProviderSt
     try {
       final qrCode = QrCode.fromData(
         data: widget.item.data,
-        errorCorrectLevel: QrErrorCorrectLevel.Q,
+        errorCorrectLevel: QrErrorCorrectLevel.H,
       );
 
       final qrImage = QrImage(qrCode);
@@ -905,19 +905,17 @@ class _ShareOverlayState extends State<ShareOverlay> with SingleTickerProviderSt
       final decoration = PrettyQrDecoration(
         // ignore: experimental_member_use
         shape: PrettyQrShape.custom(
-          PrettyQrDotsSymbol(
+          PrettyQrSmoothSymbol(
             color: qrBrush,
-            density: 0.8,
-            unifiedFinderPattern: false,
-            unifiedAlignmentPatterns: false,
+            roundFactor: 0.5,
           ),
           finderPattern: PrettyQrSmoothSymbol(
             color: qrBrush,
-            roundFactor: 1.0,
+            roundFactor: 0.8,
           ),
           alignmentPatterns: PrettyQrSmoothSymbol(
             color: qrBrush,
-            roundFactor: 1.0,
+            roundFactor: 0.8,
           ),
         ),
         background: Color(0xFFFFFFFF),

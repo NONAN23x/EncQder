@@ -55,23 +55,21 @@ class QrDisplay extends StatelessWidget {
           height: size,
           child: PrettyQrView.data(
             data: data,
-            errorCorrectLevel: QrErrorCorrectLevel.Q,
+            errorCorrectLevel: QrErrorCorrectLevel.H,
             decoration: PrettyQrDecoration(
               // ignore: experimental_member_use
               shape: PrettyQrShape.custom(
-                PrettyQrDotsSymbol(
+                PrettyQrSmoothSymbol(
                   color: qrBrush,
-                  density: 0.8,
-                  unifiedFinderPattern: false,
-                  unifiedAlignmentPatterns: false,
+                  roundFactor: 0.5,
                 ),
                 finderPattern: PrettyQrSmoothSymbol(
                   color: qrBrush,
-                  roundFactor: 1.0,
+                  roundFactor: 0.8,
                 ),
                 alignmentPatterns: PrettyQrSmoothSymbol(
                   color: qrBrush,
-                  roundFactor: 1.0,
+                  roundFactor: 0.8,
                 ),
               ),
               background: Colors.transparent,

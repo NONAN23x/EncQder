@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/storage_service.dart';
+import '../widgets/qr_display.dart';
+import 'history_screen.dart' show ShareOverlay;
 
 class InputScreen extends StatefulWidget {
   const InputScreen({super.key});
@@ -38,6 +40,127 @@ class _InputScreenState extends State<InputScreen> with AutomaticKeepAliveClient
     _upiAmountController.dispose();
     _upiNoteController.dispose();
     super.dispose();
+  }
+
+  void _showQrPreview(String data, String dataType) {
+    if (data.trim().isEmpty) return;
+    
+    FocusScope.of(context).unfocus();
+
+    final tempItem = QrItem(
+      id: 'preview',
+      data: data.trim(),
+      createdAt: DateTime.now(),
+      dataType: dataType,
+      label: 'Preview',
+    );
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 24),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[400],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Text(
+                'Preview',
+                style: Theme.of(context).textTheme.headlineMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              Center(
+                child: SizedBox(
+                  width: 200,
+                  height: 200,
+                  child: QrDisplay(data: tempItem.data),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Container(
+                padding: const EdgeInsets.all(16),
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardTheme.color,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Theme.of(context).cardTheme.shape is RoundedRectangleBorder
+                        ? (Theme.of(context).cardTheme.shape as RoundedRectangleBorder).side.color
+                        : Colors.transparent,
+                  ),
+                ),
+                child: Text(
+                  tempItem.data,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                         Navigator.of(context).push(
+                          PageRouteBuilder(
+                            opaque: false,
+                            pageBuilder: (context, animation, secondaryAnimation) => ShareOverlay(item: tempItem),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.share_rounded),
+                      label: const Text('Share'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _saveData(data, dataType);
+                      },
+                      icon: const Icon(Icons.save_rounded),
+                      label: const Text('Save'),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _saveData(String data, String dataType) async {
@@ -113,28 +236,31 @@ class _InputScreenState extends State<InputScreen> with AutomaticKeepAliveClient
     super.build(context);
     final theme = Theme.of(context);
     
-    return Scaffold(
-      appBar: AppBar(title: const Text('Create QR')),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Container(
-            clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: ExpansionPanelList(
-              elevation: 0,
-              expansionCallback: (int index, bool isExpanded) {
-                setState(() {
-                  _expandedIndex = isExpanded ? index : -1;
-                });
-              },
-              children: [
-                _buildTextPanel(theme),
-                _buildWifiPanel(theme),
-                _buildUpiPanel(theme),
-              ],
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Create QR')),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Container(
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: ExpansionPanelList(
+                elevation: 0,
+                expansionCallback: (int index, bool isExpanded) {
+                  setState(() {
+                    _expandedIndex = isExpanded ? index : -1;
+                  });
+                },
+                children: [
+                  _buildTextPanel(theme),
+                  _buildWifiPanel(theme),
+                  _buildUpiPanel(theme),
+                ],
+              ),
             ),
           ),
         ),
@@ -173,7 +299,7 @@ class _InputScreenState extends State<InputScreen> with AutomaticKeepAliveClient
             const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: _textController.text.trim().isNotEmpty
-                  ? () => _saveData(_textController.text, 'TEXT')
+                  ? () => _showQrPreview(_textController.text, 'TEXT')
                   : null,
               icon: const Icon(Icons.qr_code_rounded),
               label: const Text('Generate QR Code'),
@@ -254,7 +380,7 @@ class _InputScreenState extends State<InputScreen> with AutomaticKeepAliveClient
             const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: _wifiSsidController.text.trim().isNotEmpty
-                  ? () => _saveData(_generateWifiString(), 'WIFI')
+                  ? () => _showQrPreview(_generateWifiString(), 'WIFI')
                   : null,
               icon: const Icon(Icons.qr_code_rounded),
               label: const Text('Generate Wi-Fi QR Code'),
@@ -335,7 +461,7 @@ class _InputScreenState extends State<InputScreen> with AutomaticKeepAliveClient
             const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: _upiIdController.text.trim().isNotEmpty && _upiIdController.text.contains('@')
-                  ? () => _saveData(_generateUpiString(), 'UPI')
+                  ? () => _showQrPreview(_generateUpiString(), 'UPI')
                   : null,
               icon: const Icon(Icons.qr_code_rounded),
               label: const Text('Generate UPI QR Code'),

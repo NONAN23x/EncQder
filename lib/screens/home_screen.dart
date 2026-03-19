@@ -26,6 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _navigateToPage(int page) {
+    FocusScope.of(context).unfocus();
     _pageController.animateToPage(
       page,
       duration: const Duration(milliseconds: 400),
@@ -39,6 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: PageView(
         controller: _pageController,
         physics: const BouncingScrollPhysics(),
+        onPageChanged: (_) => FocusScope.of(context).unfocus(),
         children: [
           const InputScreen(),
           HistoryScreen(themeProvider: widget.themeProvider),
