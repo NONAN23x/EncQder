@@ -74,7 +74,7 @@ class SettingsScreen extends StatelessWidget {
         await SharePlus.instance.share(
           ShareParams(
             files: [XFile(file.path)],
-            text: 'EncQder Home Data Backup',
+            text: 'EncQder Data Backup',
           ),
         );
       }
@@ -195,7 +195,7 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 16),
           _buildDataCard(
             context: context,
-            title: 'Export Home Data',
+            title: 'Export Data',
             subtitle: 'Export all QR codes to a .zip file',
             icon: Icons.upload_file_rounded,
             onTap: () => _exportData(context),
@@ -203,7 +203,7 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 12),
           _buildDataCard(
             context: context,
-            title: 'Import Home Data',
+            title: 'Import Data',
             subtitle: 'Restore QR codes from a backup .zip file',
             icon: Icons.download_rounded,
             onTap: () => _importData(context),
@@ -220,7 +220,7 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 32),
           Center(
             child: Text(
-              'EncQder v1.0.2',
+              'EncQder v1.0.3+5',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
