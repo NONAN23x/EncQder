@@ -50,7 +50,7 @@ class SettingsScreen extends StatelessWidget {
       if (history.isEmpty) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No history to export')),
+            const SnackBar(content: Text('No saved items to export')),
           );
         }
         return;
@@ -74,7 +74,7 @@ class SettingsScreen extends StatelessWidget {
         await SharePlus.instance.share(
           ShareParams(
             files: [XFile(file.path)],
-            text: 'EncQder History Backup',
+            text: 'EncQder Home Data Backup',
           ),
         );
       }
@@ -195,7 +195,7 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 16),
           _buildDataCard(
             context: context,
-            title: 'Export History',
+            title: 'Export Home Data',
             subtitle: 'Export all QR codes to a .zip file',
             icon: Icons.upload_file_rounded,
             onTap: () => _exportData(context),
@@ -203,7 +203,7 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 12),
           _buildDataCard(
             context: context,
-            title: 'Import History',
+            title: 'Import Home Data',
             subtitle: 'Restore QR codes from a backup .zip file',
             icon: Icons.download_rounded,
             onTap: () => _importData(context),

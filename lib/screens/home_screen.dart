@@ -98,7 +98,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
                             Expanded(child: _buildNavItem(context, Icons.edit_outlined, 0, 'Create')),
-                            Expanded(child: _buildNavItem(context, Icons.history, 1, 'History')),
+                            Expanded(child: _buildNavItem(context, Icons.history, 1, 'Home')),
                             Expanded(child: _buildNavItem(context, Icons.qr_code_scanner, 2, 'Scan')),
                           ],
                         ),

@@ -84,7 +84,7 @@ class _InputScreenState extends State<InputScreen> with AutomaticKeepAliveClient
 
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Saved to History!'),
+                          content: Text('Saved to Home!'),
                           behavior: SnackBarBehavior.floating,
                         ),
                       );                            
@@ -95,7 +95,7 @@ class _InputScreenState extends State<InputScreen> with AutomaticKeepAliveClient
                     }
                   },
                   icon: const Icon(Icons.save_rounded),
-                  label: const Text('Save to History'),
+                  label: const Text('Save to Home'),
                   style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),

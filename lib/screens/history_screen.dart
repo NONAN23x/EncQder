@@ -89,7 +89,7 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
     super.build(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('EncQder History'),
+        title: const Text('EncQder'),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_rounded),
@@ -141,7 +141,7 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
   }
 
   Widget _buildEmptyState() {
-    final bool hasHistoryButNoMatch = _history.isNotEmpty && _filteredAndSortedHistory.isEmpty;
+    final bool hasItemsButNoMatch = _history.isNotEmpty && _filteredAndSortedHistory.isEmpty;
     final colorScheme = Theme.of(context).colorScheme;
 
     return Center(
@@ -155,14 +155,14 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
               shape: BoxShape.circle,
             ),
             child: Icon(
-              hasHistoryButNoMatch ? Icons.filter_alt_off_rounded : Icons.qr_code_2,
+              hasItemsButNoMatch ? Icons.filter_alt_off_rounded : Icons.qr_code_2,
               size: 64,
               color: colorScheme.primary,
             ),
           ),
           const SizedBox(height: 32),
           Text(
-            hasHistoryButNoMatch ? 'No matches' : 'No History Yet',
+            hasItemsButNoMatch ? 'No matches' : 'Home is Empty',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.w700,
               color: colorScheme.onSurface,
@@ -172,9 +172,9 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 40),
             child: Text(
-              hasHistoryButNoMatch 
+              hasItemsButNoMatch 
                   ? 'Try changing your filter settings to find what you\'re looking for.' 
-                  : 'Swipe left to Create, right to Scan. Your history will appear here.',
+                  : 'Swipe left to Create, right to Scan. Your saved items will appear here.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: colorScheme.onSurfaceVariant,

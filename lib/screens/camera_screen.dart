@@ -39,7 +39,7 @@ class _CameraScreenState extends State<CameraScreen> with AutomaticKeepAliveClie
          // Auto-redirect to home index if idle for 2 min saving battery
          if (widget.pageController != null) {
             widget.pageController!.animateToPage(
-              1, // History screen index
+              1, // Home screen index
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeInOut,
             );
@@ -173,7 +173,7 @@ class _CameraScreenState extends State<CameraScreen> with AutomaticKeepAliveClie
 
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Saved to History!'),
+                            content: Text('Saved to Home!'),
                             behavior: SnackBarBehavior.floating,
                           ),
                         );
@@ -231,10 +231,13 @@ class _CameraScreenState extends State<CameraScreen> with AutomaticKeepAliveClie
             fit: StackFit.expand,
             children: [
             // 1. The actual Camera feed
-            MobileScanner(
-              controller: _scannerController,
-              scanWindow: cutoutRect,
-              onDetect: _handleBarcode,
+            Transform.scale(
+              scale: 1.01,
+              child: MobileScanner(
+                controller: _scannerController,
+                scanWindow: cutoutRect,
+                onDetect: _handleBarcode,
+              ),
             ),
 
             // 2. The Dark Overlay with Transparent Center
