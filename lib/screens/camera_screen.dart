@@ -21,6 +21,8 @@ class _CameraScreenState extends State<CameraScreen> with AutomaticKeepAliveClie
 
   bool _isProcessing = false;
   Timer? _idleTimer;
+  Timer? _cameraKillTimer;
+  bool _isCameraRunning = true;
   static const _idleTimeout = Duration(minutes: 2);
 
   @override
@@ -30,6 +32,41 @@ class _CameraScreenState extends State<CameraScreen> with AutomaticKeepAliveClie
   void initState() {
     super.initState();
     _startIdleTimer();
+    
+    // Listen to page changes to stop camera when not visible
+    widget.pageController?.addListener(_onPageChanged);
+  }
+
+  void _onPageChanged() {
+    if (widget.pageController == null) return;
+    
+    final page = widget.pageController!.page ?? 0;
+    // We are on the Camera page (index 2)
+    if ((page - 2).abs() < 0.01) {
+      _cameraKillTimer?.cancel();
+      _cameraKillTimer = null;
+      if (!_isCameraRunning) {
+        _scannerController.start();
+        _isCameraRunning = true;
+      }
+    } else {
+      // Navigated away, start kill timer if not already running
+      if (_isCameraRunning && _cameraKillTimer == null) {
+        _cameraKillTimer = Timer(const Duration(seconds: 2), () {
+          if (mounted) {
+            final currentPage = widget.pageController?.page ?? 0;
+            // Re-check to ensure we didn't just swipe back
+            if ((currentPage - 2).abs() > 0.1) {
+              _scannerController.stop();
+              setState(() {
+                _isCameraRunning = false;
+              });
+            }
+          }
+          _cameraKillTimer = null;
+        });
+      }
+    }
   }
 
   void _startIdleTimer() {
@@ -54,7 +91,9 @@ class _CameraScreenState extends State<CameraScreen> with AutomaticKeepAliveClie
 
   @override
   void dispose() {
+    widget.pageController?.removeListener(_onPageChanged);
     _idleTimer?.cancel();
+    _cameraKillTimer?.cancel();
     _scannerController.dispose();
     super.dispose();
   }
