@@ -15,7 +15,7 @@ plugins {
 }
 
 android {
-    namespace = "com.encqder.encqder"
+    namespace = "com.nonanTech.EncQder"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -38,7 +38,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.encqder.encqder"
+        applicationId = "com.nonanTech.EncQder"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
