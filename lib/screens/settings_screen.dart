@@ -175,6 +175,7 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
@@ -184,13 +185,13 @@ class SettingsScreen extends StatelessWidget {
         ),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
         children: [
-          _buildSectionHeader('Appearance'),
+          _buildSectionHeader(context, 'Appearance'),
           const SizedBox(height: 16),
           _buildThemeSelector(context),
           const SizedBox(height: 32),
-          _buildSectionHeader('Data Management'),
+          _buildSectionHeader(context, 'Data Management'),
           const SizedBox(height: 16),
           _buildDataCard(
             context: context,
@@ -216,60 +217,58 @@ class SettingsScreen extends StatelessWidget {
             isDestructive: true,
             onTap: () => _confirmWipe(context),
           ),
+          const SizedBox(height: 32),
+          Center(
+            child: Text(
+              'EncQder v1.0.2',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(BuildContext context, String title) {
     return Text(
       title.toUpperCase(),
-      style: const TextStyle(
-        fontSize: 12,
+      style: Theme.of(context).textTheme.labelMedium?.copyWith(
         fontWeight: FontWeight.w700,
         letterSpacing: 1.2,
-        color: Colors.grey,
+        color: Theme.of(context).colorScheme.primary,
       ),
     );
   }
 
   Widget _buildThemeSelector(BuildContext context) {
-    return AnimatedBuilder(
-      animation: themeProvider,
+    return ListenableBuilder(
+      listenable: themeProvider,
       builder: (context, _) {
-        return Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Theme.of(context).brightness == Brightness.light
-                  ? Colors.grey[200]!
-                  : const Color(0xFF2C2C2C),
+        return SegmentedButton<ThemeMode>(
+          segments: const [
+            ButtonSegment<ThemeMode>(
+              value: ThemeMode.light,
+              label: Text('Light'),
+              icon: Icon(Icons.light_mode_rounded),
             ),
-          ),
-          padding: const EdgeInsets.all(4),
-          child: Row(
-            children: [
-              _ThemeOption(
-                label: 'Light',
-                icon: Icons.light_mode_rounded,
-                isSelected: themeProvider.themeMode == ThemeMode.light,
-                onTap: () => themeProvider.setThemeMode(ThemeMode.light),
-              ),
-              _ThemeOption(
-                label: 'System',
-                icon: Icons.settings_system_daydream_rounded,
-                isSelected: themeProvider.themeMode == ThemeMode.system,
-                onTap: () => themeProvider.setThemeMode(ThemeMode.system),
-              ),
-              _ThemeOption(
-                label: 'Dark',
-                icon: Icons.dark_mode_rounded,
-                isSelected: themeProvider.themeMode == ThemeMode.dark,
-                onTap: () => themeProvider.setThemeMode(ThemeMode.dark),
-              ),
-            ],
-          ),
+            ButtonSegment<ThemeMode>(
+              value: ThemeMode.system,
+              label: Text('System'),
+              icon: Icon(Icons.settings_suggest_rounded),
+            ),
+            ButtonSegment<ThemeMode>(
+              value: ThemeMode.dark,
+              label: Text('Dark'),
+              icon: Icon(Icons.dark_mode_rounded),
+            ),
+          ],
+          selected: {themeProvider.themeMode},
+          onSelectionChanged: (Set<ThemeMode> newSelection) {
+            themeProvider.setThemeMode(newSelection.first);
+          },
+          showSelectedIcon: false,
         );
       },
     );
@@ -283,110 +282,45 @@ class SettingsScreen extends StatelessWidget {
     required VoidCallback onTap,
     bool isDestructive = false,
   }) {
-    final color = isDestructive ? Colors.red : Theme.of(context).colorScheme.onSurface;
+    final theme = Theme.of(context);
+    final color = isDestructive ? theme.colorScheme.error : theme.colorScheme.onSurface;
     
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: Theme.of(context).brightness == Brightness.light
-                ? Colors.grey[200]!
-                : const Color(0xFF2C2C2C),
-          ),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: color, size: 28),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: color,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey[500],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ThemeOption extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _ThemeOption({
-    required this.label,
-    required this.icon,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isLight = Theme.of(context).brightness == Brightness.light;
-    
-    return Expanded(
-      child: GestureDetector(
+    return Card(
+      margin: EdgeInsets.zero,
+      child: ListTile(
         onTap: onTap,
-        behavior: HitTestBehavior.opaque,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeInOut,
-          padding: const EdgeInsets.symmetric(vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        leading: Container(
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: isSelected ? colorScheme.onSurface : Colors.transparent,
+            color: isDestructive 
+                ? theme.colorScheme.errorContainer 
+                : theme.colorScheme.surfaceContainerHigh,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                size: 20,
-                color: isSelected
-                    ? colorScheme.surface
-                    : (isLight ? Colors.black54 : Colors.white54),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                  color: isSelected
-                      ? colorScheme.surface
-                      : (isLight ? Colors.black54 : Colors.white54),
-                ),
-              ),
-            ],
+          child: Icon(
+            icon, 
+            color: isDestructive ? theme.colorScheme.onErrorContainer : theme.colorScheme.primary,
+            size: 24,
           ),
         ),
+        title: Text(
+          title,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: color,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        trailing: const Icon(Icons.chevron_right_rounded, size: 20),
       ),
     );
   }
 }
+
+

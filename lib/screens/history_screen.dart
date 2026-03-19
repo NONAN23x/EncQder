@@ -138,28 +138,44 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Widget _buildEmptyState() {
     final bool hasHistoryButNoMatch = _history.isNotEmpty && _filteredAndSortedHistory.isEmpty;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            hasHistoryButNoMatch ? Icons.filter_alt_off_rounded : Icons.qr_code_2,
-            size: 80,
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            hasHistoryButNoMatch ? 'No matches' : 'No History Yet',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHigh,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              hasHistoryButNoMatch ? Icons.filter_alt_off_rounded : Icons.qr_code_2,
+              size: 64,
+              color: colorScheme.primary,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 32),
           Text(
-            hasHistoryButNoMatch ? 'Try changing your filter settings' : 'Swipe left to Create, right to Scan',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+            hasHistoryButNoMatch ? 'No matches' : 'No History Yet',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40),
+            child: Text(
+              hasHistoryButNoMatch 
+                  ? 'Try changing your filter settings to find what you\'re looking for.' 
+                  : 'Swipe left to Create, right to Scan. Your history will appear here.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                height: 1.4,
+              ),
             ),
           ),
         ],
@@ -170,68 +186,73 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Widget _buildControlBar() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      child: Row(
-        children: [
-          // Filter Pills
-          Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildFilterPill('All', FilterType.all),
-                _buildFilterPill('Day', FilterType.day),
-                _buildFilterPill('Month', FilterType.month),
-                _buildFilterPill('Year', FilterType.year),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          
-          // Active Filter Chip
-          if (_filterType != FilterType.all && _filterDate != null)
-            Expanded(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Chip(
-                  label: Text(
-                    _filterType == FilterType.day
-                        ? DateFormat('MMM d, yyyy').format(_filterDate!)
-                        : _filterType == FilterType.month
-                            ? DateFormat('MMM yyyy').format(_filterDate!)
-                            : DateFormat('yyyy').format(_filterDate!),
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                  onDeleted: () {
-                    setState(() {
-                      _filterType = FilterType.all;
-                      _filterDate = null;
-                    });
-                  },
-                  deleteIcon: const Icon(Icons.close, size: 16),
-                  visualDensity: VisualDensity.compact,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            // Filter Pills
+            Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant,
                 ),
               ),
-            )
-          else
-            const Spacer(),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildFilterPill('All', FilterType.all),
+                  _buildFilterPill('Day', FilterType.day),
+                  _buildFilterPill('Month', FilterType.month),
+                  _buildFilterPill('Year', FilterType.year),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
             
-          // Sort Toggle
-          IconButton(
-            icon: Icon(_isAscending ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded),
-            tooltip: _isAscending ? 'Oldest first' : 'Newest first',
-            onPressed: () {
-              setState(() {
-                _isAscending = !_isAscending;
-              });
-            },
-          ),
-        ],
+            // Active Filter Chip
+            if (_filterType != FilterType.all && _filterDate != null)
+              Chip(
+                label: Text(
+                  _filterType == FilterType.day
+                      ? DateFormat('MMM d, yyyy').format(_filterDate!)
+                      : _filterType == FilterType.month
+                          ? DateFormat('MMM yyyy').format(_filterDate!)
+                          : DateFormat('yyyy').format(_filterDate!),
+                ),
+                onDeleted: () {
+                  setState(() {
+                    _filterType = FilterType.all;
+                    _filterDate = null;
+                  });
+                },
+                deleteIcon: const Icon(Icons.close, size: 16),
+                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                labelStyle: TextStyle(
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+                side: BorderSide.none,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                visualDensity: VisualDensity.compact,
+              ),
+              
+            const SizedBox(width: 8),
+              
+            // Sort Toggle
+            IconButton(
+              icon: Icon(_isAscending ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded),
+              tooltip: _isAscending ? 'Oldest first' : 'Newest first',
+              onPressed: () {
+                setState(() {
+                  _isAscending = !_isAscending;
+                });
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -244,7 +265,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? Theme.of(context).colorScheme.primaryContainer : Colors.transparent,
+          color: isSelected ? Theme.of(context).colorScheme.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
@@ -252,7 +273,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           style: TextStyle(
             fontSize: 13,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-            color: isSelected ? Theme.of(context).colorScheme.onPrimaryContainer : Theme.of(context).colorScheme.onSurface,
+            color: isSelected ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
       ),
@@ -386,19 +407,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.1),
-                  ),
+                  color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: Center(
                   child: Icon(
                     item.originType == 'scanned'
                         ? Icons.qr_code_scanner_rounded
                         : Icons.qr_code_rounded,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
               ),
@@ -412,28 +429,30 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         Expanded(
                           child: Text(
                             item.label.isNotEmpty ? item.label : 'QR Code',
-                            style: const TextStyle(fontWeight: FontWeight.w600),
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
                             color: item.originType == 'scanned' 
-                                ? Colors.blue.withValues(alpha: 0.1)
-                                : Colors.green.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(4),
+                                ? Theme.of(context).colorScheme.tertiaryContainer
+                                : Theme.of(context).colorScheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
                             item.originType.toUpperCase(),
                             style: TextStyle(
                               fontSize: 9,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w800,
                               color: item.originType == 'scanned' 
-                                  ? Colors.blue
-                                  : Colors.green,
+                                  ? Theme.of(context).colorScheme.onTertiaryContainer
+                                  : Theme.of(context).colorScheme.onPrimaryContainer,
                             ),
                           ),
                         ),

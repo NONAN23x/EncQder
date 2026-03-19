@@ -244,7 +244,7 @@ class _CameraScreenState extends State<CameraScreen> {
             CustomPaint(
                painter: _ScannerBracketsPainter(
                  cutoutRect: cutoutRect,
-                 color: Colors.white,
+                 color: Theme.of(context).colorScheme.primary,
                  strokeWidth: 4.0,
                  bracketLength: 30.0,
                  radius: 12.0,
