@@ -226,18 +226,14 @@ class _CameraScreenState extends State<CameraScreen> with AutomaticKeepAliveClie
       body: GestureDetector(
         onTapDown: (_) => _resetIdleTimer(),
         onPanDown: (_) => _resetIdleTimer(),
-        child: ClipRect(
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
             // 1. The actual Camera feed
-            Transform.scale(
-              scale: 1.01,
-              child: MobileScanner(
-                controller: _scannerController,
-                scanWindow: cutoutRect,
-                onDetect: _handleBarcode,
-              ),
+            MobileScanner(
+              controller: _scannerController,
+              scanWindow: cutoutRect,
+              onDetect: _handleBarcode,
             ),
 
             // 2. The Dark Overlay with Transparent Center
@@ -304,7 +300,7 @@ class _CameraScreenState extends State<CameraScreen> with AutomaticKeepAliveClie
           ],
         ),
       ),
-    ));
+    );
   }
 }
 

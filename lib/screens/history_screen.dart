@@ -37,7 +37,9 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
   @override
   bool get wantKeepAlive => true;
 
-  List<QrItem> get _filteredAndSortedHistory {
+  List<QrItem> _filteredHistory = [];
+
+  void _updateFilteredHistory() {
     List<QrItem> items = List.from(_history);
 
     if (_filterType == FilterType.day && _filterDate != null) {
@@ -65,7 +67,7 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
       }
     });
 
-    return items;
+    _filteredHistory = items;
   }
 
   @override
@@ -79,6 +81,7 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
     if (mounted) {
       setState(() {
         _history = items;
+        _updateFilteredHistory();
         _isLoading = false;
       });
     }
@@ -117,7 +120,7 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
                     children: [
                       if (_history.isNotEmpty) _buildControlBar(),
                       Expanded(
-                        child: _filteredAndSortedHistory.isEmpty
+                        child: _filteredHistory.isEmpty
                             ? SingleChildScrollView(
                                 physics: const AlwaysScrollableScrollPhysics(),
                                 child: SizedBox(
@@ -127,9 +130,9 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
                               )
                             : ListView.builder(
                                 padding: const EdgeInsets.all(16),
-                                itemCount: _filteredAndSortedHistory.length,
+                                itemCount: _filteredHistory.length,
                                 itemBuilder: (context, index) {
-                                  return _buildHistoryCard(_filteredAndSortedHistory[index]);
+                                  return _buildHistoryCard(_filteredHistory[index]);
                                 },
                               ),
                       ),
@@ -141,7 +144,7 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
   }
 
   Widget _buildEmptyState() {
-    final bool hasItemsButNoMatch = _history.isNotEmpty && _filteredAndSortedHistory.isEmpty;
+    final bool hasItemsButNoMatch = _history.isNotEmpty && _filteredHistory.isEmpty;
     final colorScheme = Theme.of(context).colorScheme;
 
     return Center(
@@ -229,6 +232,7 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
                   setState(() {
                     _filterType = FilterType.all;
                     _filterDate = null;
+                    _updateFilteredHistory();
                   });
                 },
                 deleteIcon: const Icon(Icons.close, size: 16),
@@ -252,6 +256,7 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
               onPressed: () {
                 setState(() {
                   _isAscending = !_isAscending;
+                  _updateFilteredHistory();
                 });
               },
             ),
@@ -289,6 +294,7 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
       setState(() {
         _filterType = FilterType.all;
         _filterDate = null;
+        _updateFilteredHistory();
       });
       return;
     }
@@ -306,6 +312,7 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
         setState(() {
           _filterType = FilterType.day;
           _filterDate = selectedDate;
+          _updateFilteredHistory();
         });
       }
     } else if (type == FilterType.year) {
@@ -325,6 +332,7 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
                 setState(() {
                   _filterType = FilterType.year;
                   _filterDate = dateTime;
+                  _updateFilteredHistory();
                 });
               },
             ),
@@ -383,6 +391,7 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
                     setState(() {
                       _filterType = FilterType.month;
                       _filterDate = DateTime(selectedYear, selectedMonth);
+                      _updateFilteredHistory();
                     });
                   },
                   child: const Text('Apply'),
