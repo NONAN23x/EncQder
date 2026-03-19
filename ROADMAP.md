@@ -1,28 +1,32 @@
 # EncQder Roadmap
 
-## ✅ Version 1.0.1 (Current)
+## ✅ Version 1.0.4 (Current)
 
-### Premium Aesthetics (Shipped March 18, 2026)
+### Storage & Reactivity (Shipped March 19, 2026)
+- **Persistent File Storage**: Migrated off `SharedPreferences` to local JSON file storage within the application document directory, guaranteeing data survives app reinstalls using native OS backups.
+- **Reactive State Management**: Upgraded `StorageService` to a `ChangeNotifier`, ensuring the Home screen instantly reflects new scanned or generated items without requiring manual pull-to-refresh or tab toggling.
+
+### Expanded Generation & Discovery
+- **Wi-Fi & UPI Integration**: Refactored the Create screen into an elegant, accordion-style expandable UI. Users can now generate explicit Wi-Fi connection codes (WPA/WEP/Open) and UPI payment codes alongside standard Text/URLs.
+- **Dynamic Action Overlays**: Rebuilt the camera scanning interface to auto-detect what is being scanned. 
+  - Text scans provide 'Discard' and 'Save'.
+  - URLs introduce a native 'Visit' button.
+  - Wi-Fi scans generate a 'Connect' button that safely extracts and copies network passwords for easy OS-level connection.
+- **Smart Data Tagging**: Added contextual badges (TEXT, WIFI, UPI) below the SCANNED/GENERATED tags in the Home list.
+- **Auto-Formatting Names**: The system now automatically assigns clean default labels based on the data type (e.g., "WIFI Code X", "UPI Code Y").
+
+## ✅ Version 1.0.1 (Previous)
+
+### Premium Aesthetics
 - **Material You QR Codes**: Replaced static blue QR colors with a subtle, dynamic radial gradient that pulls from the user's OS-level wallpaper theme (Android 12+).
 - **Connected Squircle Eyes**: Refined the QR finder patterns to be continuous, smooth "squircle" shapes, moving away from disconnected dots for a more premium, connected aesthetic.
-- **Padded "Airy" Data Modules**: Adjusted the data dot density to increase the whitespace between modules, giving the QR code a lighter, more modern and readable feel.
-- **Optimized Export Padding**: Halved the quiet zone on exported images for a tighter, more modern look.
 
 ### System Integration & Theming
 - **Material You Dynamic Theming**: Configured the application to extract and apply OS-level dynamic color palettes on Android 12+ devices, while maintaining custom light/dark fallbacks.
-- **Focused Camera Scanner**: Restrained the `MobileScanner` barcode capture to a central, framed cutout, effectively ignoring QRs detected in the periphery.
-- **Theme-Aware Overlay**: Engineered a solid, full-opacity scanner overlay that perfectly mimics the underlying `scaffoldBackgroundColor`, adapting continuously to light/dark system themes.
+- **Focused Camera Scanner**: Restrained the `MobileScanner` barcode capture to a central, framed cutout.
 
 ### Premium UI & Fluidity
 - **Sliding Pill Navigation**: Replaced the static bottom nav with a custom "sliding pill" background that interpolates position and opacity during swiping.
-- **Smart Share Overlay**: Replaced vertical buttons with an animated, blurred share sheet featuring staggered action chips (Save to Gallery / Native Share).
-- **UI Clean-up**: Removed redundant live QR previews on the Create screen for a more minimal, distraction-free input experience.
-- **Portrait Enforcement**: Locked the app to portrait mode for a consistent single-handed layout.
-
-### Smart Metadata & Management
-- **Editable Labels**: Added a `label` field to history items with a pencil icon for inline renaming directly in the detail view.
-- **Auto-Incrementing Naming**: New items now automatically receive unique default labels (e.g., "QR Code 2", "QR Code 3") to avoid clutter.
-- **Side-by-Side Details Actions**: Redesigned the detail view actions into a clean horizontal layout for better reachability.
 
 ## 🔮 Planned (v1.1.0 and beyond)
 
@@ -36,4 +40,4 @@
 
 ### Advanced Capabilities
 - [ ] **Continuous Batch Scanning**: Enable high-throughput scanning mode without returning to the home screen.
-- [ ] **QR Code Content Actions**: Add contextual buttons based on scanned content (e.g., "Add to Contacts", "Connect to Wi-Fi", "Open in Maps").
+- [ ] **QR Code Content Actions**: Add contextual buttons based on scanned content (e.g., "Add to Contacts", "Open in Maps").

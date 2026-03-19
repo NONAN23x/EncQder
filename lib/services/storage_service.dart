@@ -1,4 +1,7 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class QrItem {
@@ -6,6 +9,7 @@ class QrItem {
   final String data;
   final DateTime createdAt;
   final String originType; // "generated" or "scanned"
+  final String dataType; // "TEXT", "WIFI", "UPI"
   String label;
   final Map<String, dynamic> extraData;
 
@@ -13,7 +17,8 @@ class QrItem {
     required this.id,
     required this.data,
     required this.createdAt,
-    this.originType = 'generated', // Default for older items
+    this.originType = 'generated',
+    this.dataType = 'TEXT',
     String? label,
     Map<String, dynamic>? extraData,
   }) : label = label ?? '',
@@ -25,6 +30,7 @@ class QrItem {
       'data': data,
       'createdAt': createdAt.toIso8601String(),
       'originType': originType,
+      'dataType': dataType,
       'label': label,
     };
     map.addAll(extraData);
@@ -32,7 +38,7 @@ class QrItem {
   }
 
   factory QrItem.fromJson(Map<String, dynamic> json) {
-    final standardKeys = {'id', 'data', 'createdAt', 'originType', 'label'};
+    final standardKeys = {'id', 'data', 'createdAt', 'originType', 'dataType', 'label'};
     final extra = <String, dynamic>{};
     for (final key in json.keys) {
       if (!standardKeys.contains(key)) {
@@ -44,58 +50,88 @@ class QrItem {
       id: json['id'],
       data: json['data'],
       createdAt: DateTime.parse(json['createdAt']),
-      originType: json['originType'] ?? 'generated', // Fallback for backward compatibility
+      originType: json['originType'] ?? 'generated',
+      dataType: json['dataType'] ?? 'TEXT',
       label: json['label'] as String? ?? '',
       extraData: extra,
     );
   }
 }
 
-class StorageService {
+class StorageService extends ChangeNotifier {
   static const String _historyKey = 'encqder_history';
+  static const String _fileName = 'encqder_history.json';
 
-  // Singleton pattern
   static final StorageService _instance = StorageService._internal();
   factory StorageService() => _instance;
   StorageService._internal();
 
-  SharedPreferences? _prefs;
+  List<QrItem> _items = [];
+  bool _initialized = false;
+  File? _file;
 
   Future<void> init() async {
-    _prefs = await SharedPreferences.getInstance();
+    if (_initialized) return;
+    
+    final dir = await getApplicationDocumentsDirectory();
+    _file = File('${dir.path}/$_fileName');
+
+    if (await _file!.exists()) {
+      try {
+        final String historyJson = await _file!.readAsString();
+        final List<dynamic> decodedList = json.decode(historyJson);
+        _items = decodedList.map((item) => QrItem.fromJson(item)).toList();
+      } catch (e) {
+        _items = [];
+      }
+    } else {
+      // Migrate from SharedPreferences if file doesn't exist
+      final prefs = await SharedPreferences.getInstance();
+      final String? historyJson = prefs.getString(_historyKey);
+      if (historyJson != null) {
+        try {
+          final List<dynamic> decodedList = json.decode(historyJson);
+          _items = decodedList.map((item) => QrItem.fromJson(item)).toList();
+          await _saveHistory(_items); // Save to file
+          await prefs.remove(_historyKey); // Clear after migration
+        } catch (e) {
+          _items = [];
+        }
+      }
+    }
+    
+    _initialized = true;
+    notifyListeners();
   }
 
   Future<List<QrItem>> getHistory() async {
-    if (_prefs == null) await init();
-    
-    final String? historyJson = _prefs!.getString(_historyKey);
-    if (historyJson == null) return [];
-
-    try {
-      final List<dynamic> decodedList = json.decode(historyJson);
-      return decodedList.map((item) => QrItem.fromJson(item)).toList();
-    } catch (e) {
-      // In case of parsing error, return empty and perhaps clear corrupted data
-      return [];
-    }
+    if (!_initialized) await init();
+    return List.from(_items);
   }
 
-  Future<void> saveItem(String data, {String originType = 'generated'}) async {
-    final List<QrItem> currentHistory = await getHistory();
+  Future<void> saveItem(String data, {String originType = 'generated', String dataType = 'TEXT'}) async {
+    if (!_initialized) await init();
     
     // Check for duplicates to bring them to top
-    currentHistory.removeWhere((item) => item.data == data);
+    _items.removeWhere((item) => item.data == data);
 
-    final existingLabels = currentHistory
+    String baseLabel = 'QR Code';
+    if (dataType == 'WIFI') {
+      baseLabel = 'WIFI Code';
+    } else if (dataType == 'UPI') {
+      baseLabel = 'UPI Code';
+    }
+
+    final existingLabels = _items
         .map((e) => e.label)
-        .where((l) => l.startsWith('QR Code'))
+        .where((l) => l.startsWith(baseLabel))
         .toList();
 
     int nextNumber = 1;
-    String candidateLabel = 'QR Code';
+    String candidateLabel = baseLabel;
     while (existingLabels.contains(candidateLabel)) {
       nextNumber++;
-      candidateLabel = 'QR Code $nextNumber';
+      candidateLabel = '$baseLabel $nextNumber';
     }
 
     final newItem = QrItem(
@@ -103,54 +139,54 @@ class StorageService {
       data: data,
       createdAt: DateTime.now(),
       originType: originType,
+      dataType: dataType,
       label: candidateLabel,
     );
 
     // Add to top of list
-    currentHistory.insert(0, newItem);
-
-    await _saveHistory(currentHistory);
+    _items.insert(0, newItem);
+    await _saveHistory(_items);
   }
 
   Future<void> updateLabel(String id, String newLabel) async {
-    final List<QrItem> history = await getHistory();
-    final index = history.indexWhere((e) => e.id == id);
+    if (!_initialized) await init();
+    final index = _items.indexWhere((e) => e.id == id);
     if (index != -1) {
-      history[index].label = newLabel.trim();
-      await _saveHistory(history);
+      _items[index].label = newLabel.trim();
+      await _saveHistory(_items);
     }
   }
 
   Future<void> removeItem(String id) async {
-    final List<QrItem> currentHistory = await getHistory();
-    currentHistory.removeWhere((item) => item.id == id);
-    await _saveHistory(currentHistory);
+    if (!_initialized) await init();
+    _items.removeWhere((item) => item.id == id);
+    await _saveHistory(_items);
   }
 
   Future<void> clearHistory() async {
-    if (_prefs == null) await init();
-    await _prefs!.remove(_historyKey);
+    if (!_initialized) await init();
+    _items.clear();
+    await _saveHistory(_items);
   }
 
   Future<void> _saveHistory(List<QrItem> history) async {
-    if (_prefs == null) await init();
-    
-    final List<Map<String, dynamic>> jsonList = 
-        history.map((item) => item.toJson()).toList();
-    
-    await _prefs!.setString(_historyKey, json.encode(jsonList));
+    if (_file != null) {
+      final List<Map<String, dynamic>> jsonList = 
+          history.map((item) => item.toJson()).toList();
+      await _file!.writeAsString(json.encode(jsonList));
+      notifyListeners();
+    }
   }
 
   Future<void> mergeItems(List<QrItem> newItems) async {
-    final List<QrItem> currentHistory = await getHistory();
+    if (!_initialized) await init();
     
-    // Create a set of existing data to avoid O(N^2) lookups
-    final Set<String> existingData = currentHistory.map((e) => e.data).toSet();
+    final Set<String> existingData = _items.map((e) => e.data).toSet();
 
     bool hasChanges = false;
     for (final item in newItems) {
       if (!existingData.contains(item.data)) {
-        currentHistory.add(item);
+        _items.add(item);
         existingData.add(item.data); // Keep tracking
         hasChanges = true;
       }
@@ -158,8 +194,8 @@ class StorageService {
 
     if (hasChanges) {
       // Re-sort by date descending to maintain order after merge
-      currentHistory.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      await _saveHistory(currentHistory);
+      _items.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      await _saveHistory(_items);
     }
   }
 }

@@ -220,7 +220,7 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 32),
           Center(
             child: Text(
-              'EncQder v1.0.3+5',
+              'EncQder v1.0.4+6',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),

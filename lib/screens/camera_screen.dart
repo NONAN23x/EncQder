@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../services/storage_service.dart';
 
@@ -115,6 +117,70 @@ class _CameraScreenState extends State<CameraScreen> with AutomaticKeepAliveClie
     }
   }
 
+  void _showWifiDetails(BuildContext context, String data) {
+    String ssid = 'Unknown';
+    String password = '';
+    
+    final ssidMatch = RegExp(r'S:([^;]+);').firstMatch(data);
+    if (ssidMatch != null) ssid = ssidMatch.group(1) ?? 'Unknown';
+    
+    final passMatch = RegExp(r'P:([^;]+);').firstMatch(data);
+    if (passMatch != null) password = passMatch.group(1) ?? '';
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.wifi_rounded),
+            SizedBox(width: 12),
+            Text('Wi-Fi Details'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Network Name (SSID)', style: Theme.of(context).textTheme.bodySmall),
+            const SizedBox(height: 4),
+            Text(ssid, style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            if (password.isNotEmpty) ...[
+              Text('Password', style: Theme.of(context).textTheme.bodySmall),
+              const SizedBox(height: 4),
+              SelectableText(password, style: Theme.of(context).textTheme.bodyLarge),
+            ] else ...[
+              const Text('No password required (Open Network)'),
+            ],
+            const SizedBox(height: 16),
+            const Text(
+              'Note: To connect automatically, scan this code with your device\'s native camera app. Or, copy the password and connect manually.',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+          if (password.isNotEmpty)
+            FilledButton.icon(
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: password));
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Password copied to clipboard')),
+                );
+              },
+              icon: const Icon(Icons.copy_rounded, size: 18),
+              label: const Text('Copy Password'),
+            ),
+        ],
+      ),
+    );
+  }
+
   void _showResultOverlay(String rawData) {
     showModalBottomSheet(
       context: context,
@@ -173,15 +239,13 @@ class _CameraScreenState extends State<CameraScreen> with AutomaticKeepAliveClie
               Row(
                 children: [
                   Expanded(
-                    child: OutlinedButton.icon(
+                    child: OutlinedButton(
                       onPressed: () {
                         Navigator.pop(context);
                         setState(() {
                           _isProcessing = false;
                         });
                       },
-                      icon: const Icon(Icons.delete_outline),
-                      label: const Text('Discard'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Theme.of(context).colorScheme.error,
                         side: BorderSide(color: Theme.of(context).colorScheme.error.withValues(alpha: 0.5)),
@@ -190,11 +254,12 @@ class _CameraScreenState extends State<CameraScreen> with AutomaticKeepAliveClie
                           borderRadius: BorderRadius.circular(16),
                         ),
                       ),
+                      child: const Text('Discard', overflow: TextOverflow.ellipsis, maxLines: 1),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 8),
                   Expanded(
-                    child: FilledButton.icon(
+                    child: FilledButton(
                       onPressed: () async {
                         // Show loading
                         showDialog(
@@ -205,7 +270,14 @@ class _CameraScreenState extends State<CameraScreen> with AutomaticKeepAliveClie
                           ),
                         );
 
-                        await StorageService().saveItem(rawData, originType: 'scanned');
+                        String detectedType = 'TEXT';
+                        if (rawData.startsWith('WIFI:')) {
+                          detectedType = 'WIFI';
+                        } else if (rawData.startsWith('upi://')) {
+                          detectedType = 'UPI';
+                        }
+
+                        await StorageService().saveItem(rawData, originType: 'scanned', dataType: detectedType);
 
                         if (!context.mounted) return;
                         Navigator.pop(context); // Dismiss loading
@@ -221,16 +293,57 @@ class _CameraScreenState extends State<CameraScreen> with AutomaticKeepAliveClie
                           _isProcessing = false;
                         });
                       },
-                      icon: const Icon(Icons.save_rounded),
-                      label: const Text('Save'),
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
                       ),
+                      child: const Text('Save', overflow: TextOverflow.ellipsis, maxLines: 1),
                     ),
                   ),
+                  if (rawData.startsWith('WIFI:')) ...[
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: FilledButton.tonal(
+                        onPressed: () {
+                          _showWifiDetails(context, rawData);
+                        },
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: const Text('Connect', overflow: TextOverflow.ellipsis, maxLines: 1),
+                      ),
+                    ),
+                  ] else if (rawData.contains('://')) ...[
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: FilledButton.tonal(
+                        onPressed: () async {
+                          final url = Uri.tryParse(rawData);
+                          if (url != null && await canLaunchUrl(url)) {
+                            await launchUrl(url, mode: LaunchMode.externalApplication);
+                          } else {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Could not open link')),
+                              );
+                            }
+                          }
+                        },
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: const Text('Visit', overflow: TextOverflow.ellipsis, maxLines: 1),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ],

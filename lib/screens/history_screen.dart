@@ -73,7 +73,18 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
   @override
   void initState() {
     super.initState();
+    StorageService().addListener(_onStorageChanged);
     _loadHistory();
+  }
+
+  void _onStorageChanged() {
+    _loadHistory();
+  }
+
+  @override
+  void dispose() {
+    StorageService().removeListener(_onStorageChanged);
+    super.dispose();
   }
 
   Future<void> _loadHistory() async {
@@ -450,24 +461,45 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: item.originType == 'scanned' 
-                                ? Theme.of(context).colorScheme.tertiaryContainer
-                                : Theme.of(context).colorScheme.primaryContainer,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            item.originType.toUpperCase(),
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w800,
-                              color: item.originType == 'scanned' 
-                                  ? Theme.of(context).colorScheme.onTertiaryContainer
-                                  : Theme.of(context).colorScheme.onPrimaryContainer,
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: item.originType == 'scanned' 
+                                    ? Theme.of(context).colorScheme.tertiaryContainer
+                                    : Theme.of(context).colorScheme.primaryContainer,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                item.originType.toUpperCase(),
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w800,
+                                  color: item.originType == 'scanned' 
+                                      ? Theme.of(context).colorScheme.onTertiaryContainer
+                                      : Theme.of(context).colorScheme.onPrimaryContainer,
+                                ),
+                              ),
                             ),
-                          ),
+                            const SizedBox(height: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.secondaryContainer,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                item.dataType.toUpperCase(),
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w800,
+                                  color: Theme.of(context).colorScheme.onSecondaryContainer,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -499,6 +531,70 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showWifiDetails(BuildContext context, String data) {
+    String ssid = 'Unknown';
+    String password = '';
+    
+    final ssidMatch = RegExp(r'S:([^;]+);').firstMatch(data);
+    if (ssidMatch != null) ssid = ssidMatch.group(1) ?? 'Unknown';
+    
+    final passMatch = RegExp(r'P:([^;]+);').firstMatch(data);
+    if (passMatch != null) password = passMatch.group(1) ?? '';
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.wifi_rounded),
+            SizedBox(width: 12),
+            Text('Wi-Fi Details'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Network Name (SSID)', style: Theme.of(context).textTheme.bodySmall),
+            const SizedBox(height: 4),
+            Text(ssid, style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            if (password.isNotEmpty) ...[
+              Text('Password', style: Theme.of(context).textTheme.bodySmall),
+              const SizedBox(height: 4),
+              SelectableText(password, style: Theme.of(context).textTheme.bodyLarge),
+            ] else ...[
+              const Text('No password required (Open Network)'),
+            ],
+            const SizedBox(height: 16),
+            const Text(
+              'Note: To connect, your device camera must scan the QR directly, or you can copy the password and connect manually in Settings.',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+          if (password.isNotEmpty)
+            FilledButton.icon(
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: password));
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Password copied to clipboard')),
+                );
+              },
+              icon: const Icon(Icons.copy_rounded, size: 18),
+              label: const Text('Copy Password'),
+            ),
+        ],
       ),
     );
   }
@@ -598,7 +694,7 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
                 alignment: Alignment.centerRight,
                 children: [
                   Container(
-                    padding: EdgeInsets.fromLTRB(16, 16, item.data.contains('://') ? 88 : 48, 16),
+                    padding: EdgeInsets.fromLTRB(16, 16, (item.data.contains('://') || item.dataType == 'WIFI') ? 88 : 48, 16),
                     width: double.infinity,
                     decoration: BoxDecoration(
                       color: Theme.of(context).cardTheme.color,
@@ -626,7 +722,15 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (item.data.contains('://'))
+                        if (item.dataType == 'WIFI')
+                          IconButton(
+                            icon: const Icon(Icons.wifi_rounded, size: 20),
+                            tooltip: 'View Wi-Fi details',
+                            onPressed: () {
+                              _showWifiDetails(context, item.data);
+                            },
+                          )
+                        else if (item.data.contains('://'))
                           IconButton(
                             icon: const Icon(Icons.open_in_new_rounded, size: 20),
                             tooltip: 'Open link',
