@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/storage_service.dart';
 import '../widgets/expandable_text_card.dart';
 import '../widgets/qr_display.dart';
+import '../widgets/enlarged_qr_dialog.dart';
 import 'history_screen.dart' show ShareOverlay;
 
 class InputScreen extends StatefulWidget {
@@ -93,7 +94,24 @@ class _InputScreenState extends State<InputScreen> with AutomaticKeepAliveClient
                 child: SizedBox(
                   width: 200,
                   height: 200,
-                  child: QrDisplay(data: tempItem.data),
+                  child: GestureDetector(
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => EnlargedQrDialog(
+                          item: tempItem,
+                          heroTag: 'qr_preview_${tempItem.id}',
+                        ),
+                      );
+                    },
+                    child: Hero(
+                      tag: 'qr_preview_${tempItem.id}',
+                      child: Material(
+                        color: Colors.transparent,
+                        child: QrDisplay(data: tempItem.data),
+                      ),
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
@@ -379,18 +397,87 @@ class _InputScreenState extends State<InputScreen> with AutomaticKeepAliveClient
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        TextField(
-          controller: _upiIdController,
-          onChanged: (_) => setState(() {}),
-          decoration: InputDecoration(
-            labelText: 'UPI ID (VPA)',
-            hintText: 'example@upi',
-            filled: true,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide.none,
-            ),
-          ),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            return Autocomplete<String>(
+              optionsBuilder: (TextEditingValue textEditingValue) {
+                final recentIds = StorageService().getRecentUpiIds();
+                if (textEditingValue.text.isEmpty) {
+                  return recentIds.take(5);
+                }
+                return recentIds.where((String option) {
+                  return option.toLowerCase().contains(textEditingValue.text.toLowerCase());
+                });
+              },
+              onSelected: (String selection) {
+                _upiIdController.text = selection;
+                setState(() {});
+              },
+              fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                controller.addListener(() {
+                  if (_upiIdController.text != controller.text) {
+                    _upiIdController.text = controller.text;
+                    setState(() {});
+                  }
+                });
+                if (controller.text.isEmpty && _upiIdController.text.isNotEmpty) {
+                  controller.text = _upiIdController.text;
+                }
+                return TextField(
+                  controller: controller,
+                  focusNode: focusNode,
+                  decoration: InputDecoration(
+                    labelText: 'UPI ID (VPA)',
+                    hintText: 'example@upi',
+                    filled: true,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                );
+              },
+              optionsViewBuilder: (context, onSelected, options) {
+                return Align(
+                  alignment: Alignment.topLeft,
+                  child: Material(
+                    elevation: 4.0,
+                    borderRadius: BorderRadius.circular(16),
+                    color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: 200,
+                        maxWidth: constraints.maxWidth,
+                      ),
+                      child: ListView.builder(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        shrinkWrap: true,
+                        itemCount: options.length,
+                        itemBuilder: (context, index) {
+                          final String option = options.elementAt(index);
+                          return ListTile(
+                            leading: Icon(Icons.history_rounded, size: 20, color: Theme.of(context).colorScheme.primary),
+                            title: Text(option),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.close_rounded, size: 16),
+                              onPressed: () {
+                                StorageService().forgetUpiId(option);
+                                // Hack to force autocomplete to refresh options or close
+                                FocusScope.of(context).unfocus();
+                              },
+                            ),
+                            onTap: () {
+                              onSelected(option);
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                );
+              },
+            );
+          },
         ),
         const SizedBox(height: 12),
         TextField(

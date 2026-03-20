@@ -109,6 +109,36 @@ class StorageService extends ChangeNotifier {
     return List.from(_items);
   }
 
+  List<String> getRecentUpiIds() {
+    final ids = <String>{};
+    for (final item in _items) {
+      if (item.dataType == 'UPI' && item.extraData['hiddenFromSuggestions'] != true) {
+        final match = RegExp(r'pa=([^&]+)').firstMatch(item.data);
+        if (match != null) {
+          ids.add(match.group(1)!);
+        }
+      }
+    }
+    return ids.toList();
+  }
+
+  Future<void> forgetUpiId(String upiId) async {
+    if (!_initialized) await init();
+    bool changed = false;
+    for (final item in _items) {
+      if (item.dataType == 'UPI') {
+        final match = RegExp(r'pa=([^&]+)').firstMatch(item.data);
+        if (match != null && match.group(1) == upiId) {
+          item.extraData['hiddenFromSuggestions'] = true;
+          changed = true;
+        }
+      }
+    }
+    if (changed) {
+      await _saveHistory(_items);
+    }
+  }
+
   Future<void> saveItem(String data, {String originType = 'generated', String dataType = 'TEXT'}) async {
     if (!_initialized) await init();
     

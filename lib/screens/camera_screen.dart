@@ -458,43 +458,70 @@ class _CameraScreenState extends State<CameraScreen> with AutomaticKeepAliveClie
             
             // 3. The Corner Brackets indicating the scan area
             CustomPaint(
-               painter: _ScannerBracketsPainter(
-                 cutoutRect: cutoutRect,
-                 color: Theme.of(context).colorScheme.primary,
-                 strokeWidth: 4.0,
-                 bracketLength: 30.0,
-                 radius: 12.0,
-               )
+              painter: _ScannerBracketsPainter(
+                cutoutRect: cutoutRect,
+                color: Theme.of(context).colorScheme.primary,
+                strokeWidth: 4.0,
+                bracketLength: 30.0,
+                radius: 12.0,
+              ),
             ),
 
-            // 4. Instructional Text and Gallery Button
+            // 4. Instructional Text
             Positioned(
               left: 0,
               right: 0,
               top: cutoutRect.bottom + 40,
-              child: Column(
-                children: [
-                  const Text(
-                    'Align QR code within the frame to scan',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 0.5,
-                    ),
+              child: const Text(
+                'Align QR code within the frame to scan',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+
+            // 5. Gallery Button
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: MediaQuery.of(context).padding.bottom + 48,
+              child: Center(
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(30),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.3),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 24),
-                  FilledButton.icon(
+                  child: FilledButton.icon(
                     onPressed: _pickAndAnalyzeImage,
-                    icon: const Icon(Icons.photo_library),
-                    label: const Text('Scan from Gallery'),
+                    icon: Icon(Icons.photo_library_rounded, size: 20, color: Theme.of(context).colorScheme.onPrimaryContainer),
+                    label: Text(
+                      'Scan from Gallery',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold, 
+                        letterSpacing: 0.5,
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                      ),
+                    ),
                     style: FilledButton.styleFrom(
-                      backgroundColor: Colors.black54,
-                      foregroundColor: Colors.white,
+                      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
                     ),
                   ),
-                ],
+                ),
               ),
             ),
             

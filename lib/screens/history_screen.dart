@@ -15,6 +15,7 @@ import '../services/storage_service.dart';
 import '../services/theme_provider.dart';
 import '../widgets/expandable_text_card.dart';
 import '../widgets/qr_display.dart';
+import '../widgets/enlarged_qr_dialog.dart';
 import 'settings_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
@@ -181,17 +182,34 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHigh,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              hasItemsButNoMatch ? Icons.filter_alt_off_rounded : Icons.qr_code_2,
-              size: 64,
-              color: colorScheme.primary,
-            ),
+          TweenAnimationBuilder<double>(
+            tween: Tween<double>(begin: 0, end: 1),
+            duration: const Duration(milliseconds: 1000),
+            curve: Curves.elasticOut,
+            builder: (context, value, child) {
+              return Transform.scale(
+                scale: value,
+                child: Container(
+                  padding: const EdgeInsets.all(32),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHigh,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: colorScheme.primary.withValues(alpha: 0.1),
+                        blurRadius: 30,
+                        spreadRadius: 10,
+                      )
+                    ]
+                  ),
+                  child: Icon(
+                    hasItemsButNoMatch ? Icons.filter_alt_off_rounded : Icons.qr_code_2_rounded,
+                    size: 72,
+                    color: colorScheme.primary,
+                  ),
+                ),
+              );
+            },
           ),
           const SizedBox(height: 32),
           Text(
@@ -435,119 +453,142 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
   }
 
   Widget _buildHistoryCard(QrItem item) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        onTap: () {
-          _showQrDetails(item);
-        },
-        borderRadius: BorderRadius.circular(20),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHigh,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Center(
-                  child: Icon(
-                    item.originType == 'scanned'
-                        ? Icons.qr_code_scanner_rounded
-                        : Icons.qr_code_rounded,
-                    color: Theme.of(context).colorScheme.primary,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            _showQrDetails(item);
+          },
+          borderRadius: BorderRadius.circular(24),
+          splashColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+          highlightColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      item.originType == 'scanned'
+                          ? Icons.qr_code_scanner_rounded
+                          : Icons.qr_code_rounded,
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 28,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            item.label.isNotEmpty ? item.label : 'QR Code',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              item.label.isNotEmpty ? item.label : 'QR Code',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: item.originType == 'scanned' 
-                                    ? Theme.of(context).colorScheme.tertiaryContainer
-                                    : Theme.of(context).colorScheme.primaryContainer,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                item.originType.toUpperCase(),
-                                style: TextStyle(
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w800,
-                                  color: item.originType == 'scanned' 
-                                      ? Theme.of(context).colorScheme.onTertiaryContainer
-                                      : Theme.of(context).colorScheme.onPrimaryContainer,
+                          const SizedBox(width: 8),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: item.originType == 'scanned'
+                                      ? Theme.of(context).colorScheme.tertiaryContainer
+                                      : Theme.of(context).colorScheme.secondaryContainer,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  item.originType.toUpperCase(),
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.5,
+                                    color: item.originType == 'scanned'
+                                        ? Theme.of(context).colorScheme.onTertiaryContainer
+                                        : Theme.of(context).colorScheme.onSecondaryContainer,
+                                  ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: 4),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.secondaryContainer,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                item.dataType.toUpperCase(),
-                                style: TextStyle(
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w800,
-                                  color: Theme.of(context).colorScheme.onSecondaryContainer,
+                              const SizedBox(height: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  item.dataType.toUpperCase(),
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.5,
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        item.data,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      item.data,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      DateFormat('MMM d, yyyy • h:mm a').format(item.createdAt),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: 0.5),
+                      const SizedBox(height: 6),
+                      Text(
+                        DateFormat('MMM d, yyyy • h:mm a').format(item.createdAt),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w500,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              const Icon(Icons.chevron_right, color: Colors.grey),
-            ],
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -705,7 +746,24 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
                 child: SizedBox(
                   width: 200,
                   height: 200,
-                  child: QrDisplay(data: item.data),
+                  child: GestureDetector(
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => EnlargedQrDialog(
+                          item: item,
+                          heroTag: 'qr_history_${item.id}',
+                        ),
+                      );
+                    },
+                    child: Hero(
+                      tag: 'qr_history_${item.id}',
+                      child: Material(
+                        color: Colors.transparent,
+                        child: QrDisplay(data: item.data),
+                      ),
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
