@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -17,7 +19,7 @@ class CameraScreen extends StatefulWidget {
 
 class _CameraScreenState extends State<CameraScreen> with AutomaticKeepAliveClientMixin {
   final MobileScannerController _scannerController = MobileScannerController(
-    detectionSpeed: DetectionSpeed.noDuplicates,
+    detectionSpeed: DetectionSpeed.normal,
     facing: CameraFacing.back,
   );
 
@@ -113,6 +115,49 @@ class _CameraScreenState extends State<CameraScreen> with AutomaticKeepAliveClie
 
         // Show result overlay
         _showResultOverlay(barcode.rawValue!);
+      }
+    }
+  }
+
+  Future<void> _pickAndAnalyzeImage() async {
+    if (_isProcessing) return;
+
+    final FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+    );
+
+    if (result == null || result.files.single.path == null) return;
+
+    setState(() {
+      _isProcessing = true;
+    });
+
+    final String path = result.files.single.path!;
+    final BarcodeCapture? capture = await _scannerController.analyzeImage(path);
+
+    if (capture == null || capture.barcodes.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No QR code found in the selected image.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        setState(() {
+          _isProcessing = false;
+        });
+      }
+      return;
+    }
+
+    final barcode = capture.barcodes.first;
+    if (barcode.rawValue != null && mounted) {
+      _showResultOverlay(barcode.rawValue!);
+    } else {
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
       }
     }
   }
@@ -255,6 +300,21 @@ class _CameraScreenState extends State<CameraScreen> with AutomaticKeepAliveClie
                         ),
                       ),
                       child: const Text('Discard', overflow: TextOverflow.ellipsis, maxLines: 1),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: FilledButton.tonal(
+                      onPressed: () {
+                        SharePlus.instance.share(ShareParams(text: rawData));
+                      },
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: const Text('Share', overflow: TextOverflow.ellipsis, maxLines: 1),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -407,20 +467,34 @@ class _CameraScreenState extends State<CameraScreen> with AutomaticKeepAliveClie
                )
             ),
 
-            // 4. Instructional Text
+            // 4. Instructional Text and Gallery Button
             Positioned(
               left: 0,
               right: 0,
               top: cutoutRect.bottom + 40,
-              child: const Text(
-                'Align QR code within the frame to scan',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 0.5,
-                ),
+              child: Column(
+                children: [
+                  const Text(
+                    'Align QR code within the frame to scan',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  FilledButton.icon(
+                    onPressed: _pickAndAnalyzeImage,
+                    icon: const Icon(Icons.photo_library),
+                    label: const Text('Scan from Gallery'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.black54,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ],
               ),
             ),
             

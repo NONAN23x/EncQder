@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 import 'dart:ui' as dart_ui;
 
 import 'package:flutter/material.dart';
@@ -12,6 +13,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../services/storage_service.dart';
 import '../services/theme_provider.dart';
+import '../widgets/expandable_text_card.dart';
 import '../widgets/qr_display.dart';
 import 'settings_screen.dart';
 
@@ -111,10 +113,27 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
             onPressed: () async {
               await Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => SettingsScreen(
+                PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) => SettingsScreen(
                     themeProvider: widget.themeProvider,
                   ),
+                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                    final centerOffset = Offset(
+                      MediaQuery.of(context).size.width - 24, // Approx center of the gear icon
+                      MediaQuery.of(context).padding.top + kToolbarHeight / 2,
+                    );
+                    return ClipPath(
+                      clipper: CircularRevealClipper(
+                        fraction: CurvedAnimation(
+                          parent: animation,
+                          curve: Curves.easeInOut,
+                        ).value,
+                        centerOffset: centerOffset,
+                      ),
+                      child: child,
+                    );
+                  },
+                  transitionDuration: const Duration(milliseconds: 600),
                 ),
               );
               _loadHistory();
@@ -693,29 +712,9 @@ class _HistoryScreenState extends State<HistoryScreen> with AutomaticKeepAliveCl
               Stack(
                 alignment: Alignment.centerRight,
                 children: [
-                  Container(
+                  ExpandableTextCard(
+                    text: item.data,
                     padding: EdgeInsets.fromLTRB(16, 16, (item.data.contains('://') || item.dataType == 'WIFI') ? 88 : 48, 16),
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardTheme.color,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color:
-                            Theme.of(context).cardTheme.shape
-                                is RoundedRectangleBorder
-                            ? (Theme.of(context).cardTheme.shape
-                                      as RoundedRectangleBorder)
-                                  .side
-                                  .color
-                            : Colors.transparent,
-                      ),
-                    ),
-                    child: Text(
-                      item.data,
-                      style: Theme.of(context).textTheme.bodyLarge,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
                   ),
                   Padding(
                     padding: const EdgeInsets.only(right: 4),
@@ -1050,5 +1049,39 @@ class _ShareOverlayState extends State<ShareOverlay> with SingleTickerProviderSt
         ],
       ),
     );
+  }
+}
+
+class CircularRevealClipper extends CustomClipper<Path> {
+  final double fraction;
+  final Offset centerOffset;
+
+  CircularRevealClipper({required this.fraction, required this.centerOffset});
+
+  @override
+  Path getClip(Size size) {
+    final double maxRadius = _calcMaxRadius(size, centerOffset);
+    final double radius = maxRadius * fraction;
+
+    return Path()..addOval(Rect.fromCircle(center: centerOffset, radius: radius));
+  }
+
+  double _calcMaxRadius(Size size, Offset center) {
+    final w = size.width;
+    final h = size.height;
+    final dx = center.dx;
+    final dy = center.dy;
+
+    final d1 = dx * dx + dy * dy;
+    final d2 = (w - dx) * (w - dx) + dy * dy;
+    final d3 = dx * dx + (h - dy) * (h - dy);
+    final d4 = (w - dx) * (w - dx) + (h - dy) * (h - dy);
+
+    return sqrt(max(max(d1, d2), max(d3, d4)));
+  }
+
+  @override
+  bool shouldReclip(CircularRevealClipper oldClipper) {
+    return fraction != oldClipper.fraction || centerOffset != oldClipper.centerOffset;
   }
 }

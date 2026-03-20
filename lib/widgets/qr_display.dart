@@ -9,20 +9,19 @@ class QrDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Determine qr color based on theme
+    // Determine qr color to be dark always
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final qrColor = isDark ? Colors.white : Colors.black;
     
     // Subtle dynamic gradient based on user's wallpaper/Material You theme
     final primaryColor = Theme.of(context).colorScheme.primary;
-    // Mix the primary color heavily with the qrColor so it's a subtle tint in the center
-    final subtleGradientColor = Color.lerp(primaryColor, qrColor, 0.4) ?? primaryColor;
+    // Mix the primary color heavily with black so it's a subtle tint in the center
+    final subtleGradientColor = Color.lerp(primaryColor, const Color(0xFF000000), 0.4) ?? primaryColor;
     
     final qrBrush = PrettyQrBrush.gradient(
       gradient: RadialGradient(
         colors: [
           subtleGradientColor,
-          qrColor,
+          const Color(0xFF000000),
         ],
       ),
     );
@@ -30,7 +29,7 @@ class QrDisplay extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
+        color: const Color(0xFFFFFFFF),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: Theme.of(context).cardTheme.shape is RoundedRectangleBorder
@@ -72,7 +71,8 @@ class QrDisplay extends StatelessWidget {
                   roundFactor: 0.8,
                 ),
               ),
-              background: Colors.transparent,
+              background: const Color(0xFFFFFFFF),
+              quietZone: const PrettyQrQuietZone.modules(2),
             ),
           ),
         ),

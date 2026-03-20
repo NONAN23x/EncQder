@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/storage_service.dart';
+import '../widgets/expandable_text_card.dart';
 import '../widgets/qr_display.dart';
 import 'history_screen.dart' show ShareOverlay;
 
@@ -11,7 +12,7 @@ class InputScreen extends StatefulWidget {
 }
 
 class _InputScreenState extends State<InputScreen> with AutomaticKeepAliveClientMixin {
-  int _expandedIndex = 0; // 0 = Text, 1 = Wi-Fi, 2 = UPI
+  int _expandedIndex = -1; // 0 = Text, 1 = Wi-Fi, 2 = UPI
 
   // Text
   final TextEditingController _textController = TextEditingController();
@@ -46,6 +47,7 @@ class _InputScreenState extends State<InputScreen> with AutomaticKeepAliveClient
     if (data.trim().isEmpty) return;
     
     FocusScope.of(context).unfocus();
+    setState(() { _expandedIndex = -1; });
 
     final tempItem = QrItem(
       id: 'preview',
@@ -95,24 +97,9 @@ class _InputScreenState extends State<InputScreen> with AutomaticKeepAliveClient
                 ),
               ),
               const SizedBox(height: 24),
-              Container(
+              ExpandableTextCard(
+                text: tempItem.data,
                 padding: const EdgeInsets.all(16),
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardTheme.color,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: Theme.of(context).cardTheme.shape is RoundedRectangleBorder
-                        ? (Theme.of(context).cardTheme.shape as RoundedRectangleBorder).side.color
-                        : Colors.transparent,
-                  ),
-                ),
-                child: Text(
-                  tempItem.data,
-                  style: Theme.of(context).textTheme.bodyLarge,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
               ),
               const SizedBox(height: 24),
               Row(
@@ -234,7 +221,6 @@ class _InputScreenState extends State<InputScreen> with AutomaticKeepAliveClient
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final theme = Theme.of(context);
     
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
@@ -248,17 +234,29 @@ class _InputScreenState extends State<InputScreen> with AutomaticKeepAliveClient
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: ExpansionPanelList(
-                elevation: 0,
-                expansionCallback: (int index, bool isExpanded) {
-                  setState(() {
-                    _expandedIndex = isExpanded ? index : -1;
-                  });
-                },
+              child: Column(
                 children: [
-                  _buildTextPanel(theme),
-                  _buildWifiPanel(theme),
-                  _buildUpiPanel(theme),
+                  _AnimatedExpandableCard(
+                    isExpanded: _expandedIndex == 0,
+                    onTap: () => setState(() => _expandedIndex = _expandedIndex == 0 ? -1 : 0),
+                    title: 'Text / URL',
+                    icon: Icons.text_fields_rounded,
+                    body: _buildTextBody(),
+                  ),
+                  _AnimatedExpandableCard(
+                    isExpanded: _expandedIndex == 1,
+                    onTap: () => setState(() => _expandedIndex = _expandedIndex == 1 ? -1 : 1),
+                    title: 'Wi-Fi Network',
+                    icon: Icons.wifi_rounded,
+                    body: _buildWifiBody(),
+                  ),
+                  _AnimatedExpandableCard(
+                    isExpanded: _expandedIndex == 2,
+                    onTap: () => setState(() => _expandedIndex = _expandedIndex == 2 ? -1 : 2),
+                    title: 'UPI Payment',
+                    icon: Icons.account_balance_wallet_rounded,
+                    body: _buildUpiBody(),
+                  ),
                 ],
               ),
             ),
@@ -268,209 +266,291 @@ class _InputScreenState extends State<InputScreen> with AutomaticKeepAliveClient
     );
   }
 
-  ExpansionPanel _buildTextPanel(ThemeData theme) {
-    return ExpansionPanel(
-      backgroundColor: theme.cardTheme.color,
-      headerBuilder: (BuildContext context, bool isExpanded) {
-        return const ListTile(
-          leading: Icon(Icons.text_fields_rounded),
-          title: Text('Text / URL', style: TextStyle(fontWeight: FontWeight.w600)),
-        );
-      },
-      body: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              controller: _textController,
-              maxLength: 500,
-              maxLines: 4,
-              onChanged: (_) => setState(() {}),
-              decoration: InputDecoration(
-                hintText: 'Enter text, link, or data here...',
-                filled: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
+  Widget _buildTextBody() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextField(
+          controller: _textController,
+          maxLength: 500,
+          maxLines: 4,
+          onChanged: (_) => setState(() {}),
+          decoration: InputDecoration(
+            hintText: 'Enter text, link, or data here...',
+            filled: true,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
             ),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: _textController.text.trim().isNotEmpty
-                  ? () => _showQrPreview(_textController.text, 'TEXT')
-                  : null,
-              icon: const Icon(Icons.qr_code_rounded),
-              label: const Text('Generate QR Code'),
-            ),
-          ],
+          ),
         ),
-      ),
-      isExpanded: _expandedIndex == 0,
-      canTapOnHeader: true,
+        const SizedBox(height: 16),
+        FilledButton.icon(
+          onPressed: _textController.text.trim().isNotEmpty
+              ? () => _showQrPreview(_textController.text, 'TEXT')
+              : null,
+          icon: const Icon(Icons.qr_code_rounded),
+          label: const Text('Generate QR Code'),
+          style: FilledButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
-  ExpansionPanel _buildWifiPanel(ThemeData theme) {
-    return ExpansionPanel(
-      backgroundColor: theme.cardTheme.color,
-      headerBuilder: (BuildContext context, bool isExpanded) {
-        return const ListTile(
-          leading: Icon(Icons.wifi_rounded),
-          title: Text('Wi-Fi Network', style: TextStyle(fontWeight: FontWeight.w600)),
-        );
-      },
-      body: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+  Widget _buildWifiBody() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextField(
+          controller: _wifiSsidController,
+          onChanged: (_) => setState(() {}),
+          decoration: InputDecoration(
+            labelText: 'Network Name (SSID)',
+            filled: true,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        DropdownMenu<String>(
+          initialSelection: _wifiSecurity,
+          expandedInsets: EdgeInsets.zero,
+          label: const Text('Security'),
+          dropdownMenuEntries: const [
+            DropdownMenuEntry(value: 'WPA', label: 'WPA/WPA2/WPA3'),
+            DropdownMenuEntry(value: 'WEP', label: 'WEP'),
+            DropdownMenuEntry(value: 'nopass', label: 'None'),
+          ],
+          onSelected: (val) {
+            if (val != null) {
+              setState(() => _wifiSecurity = val);
+            }
+          },
+          inputDecorationTheme: InputDecorationTheme(
+            filled: true,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        ),
+        if (_wifiSecurity != 'nopass') ...[
+          const SizedBox(height: 12),
+          TextField(
+            controller: _wifiPasswordController,
+            obscureText: true,
+            onChanged: (_) => setState(() {}),
+            decoration: InputDecoration(
+              labelText: 'Password',
+              filled: true,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+        ],
+        const SizedBox(height: 16),
+        FilledButton.icon(
+          onPressed: _wifiSsidController.text.trim().isNotEmpty
+              ? () => _showQrPreview(_generateWifiString(), 'WIFI')
+              : null,
+          icon: const Icon(Icons.qr_code_rounded),
+          label: const Text('Generate Wi-Fi QR Code'),
+          style: FilledButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUpiBody() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextField(
+          controller: _upiIdController,
+          onChanged: (_) => setState(() {}),
+          decoration: InputDecoration(
+            labelText: 'UPI ID (VPA)',
+            hintText: 'example@upi',
+            filled: true,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _upiNameController,
+          decoration: InputDecoration(
+            labelText: 'Payee Name (Optional)',
+            filled: true,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _upiAmountController,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: InputDecoration(
+            labelText: 'Amount (Optional)',
+            prefixText: '₹ ',
+            filled: true,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _upiNoteController,
+          decoration: InputDecoration(
+            labelText: 'Note (Optional)',
+            filled: true,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        FilledButton.icon(
+          onPressed: _upiIdController.text.trim().isNotEmpty && _upiIdController.text.contains('@')
+              ? () => _showQrPreview(_generateUpiString(), 'UPI')
+              : null,
+          icon: const Icon(Icons.qr_code_rounded),
+          label: const Text('Generate UPI QR Code'),
+          style: FilledButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _AnimatedExpandableCard extends StatelessWidget {
+  final bool isExpanded;
+  final VoidCallback onTap;
+  final String title;
+  final IconData icon;
+  final Widget body;
+
+  const _AnimatedExpandableCard({
+    required this.isExpanded,
+    required this.onTap,
+    required this.title,
+    required this.icon,
+    required this.body,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeOutCubic,
+      margin: EdgeInsets.only(bottom: isExpanded ? 24 : 12, top: isExpanded ? 12 : 0),
+      decoration: BoxDecoration(
+        color: isExpanded ? theme.colorScheme.surfaceContainerHigh : theme.colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(isExpanded ? 24 : 16),
+        border: Border.all(
+          color: isExpanded ? theme.colorScheme.primary.withValues(alpha: 0.3) : theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+          width: isExpanded ? 2 : 1,
+        ),
+        boxShadow: isExpanded
+            ? [
+                BoxShadow(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.08),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                )
+              ]
+            : [],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(isExpanded ? 24 : 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            TextField(
-              controller: _wifiSsidController,
-              onChanged: (_) => setState(() {}),
-              decoration: InputDecoration(
-                labelText: 'Network Name (SSID)',
-                filled: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            DropdownMenu<String>(
-              initialSelection: _wifiSecurity,
-              expandedInsets: EdgeInsets.zero,
-              label: const Text('Security'),
-              dropdownMenuEntries: const [
-                DropdownMenuEntry(value: 'WPA', label: 'WPA/WPA2/WPA3'),
-                DropdownMenuEntry(value: 'WEP', label: 'WEP'),
-                DropdownMenuEntry(value: 'nopass', label: 'None'),
-              ],
-              onSelected: (val) {
-                if (val != null) {
-                  setState(() => _wifiSecurity = val);
-                }
-              },
-              inputDecorationTheme: InputDecorationTheme(
-                filled: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-            if (_wifiSecurity != 'nopass') ...[
-              const SizedBox(height: 12),
-              TextField(
-                controller: _wifiPasswordController,
-                obscureText: true,
-                onChanged: (_) => setState(() {}),
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  filled: true,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onTap,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: isExpanded ? theme.colorScheme.primaryContainer : theme.colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          icon,
+                          size: 20,
+                          color: isExpanded ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: isExpanded ? FontWeight.bold : FontWeight.w600,
+                            color: isExpanded ? theme.colorScheme.primary : theme.colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                      AnimatedRotation(
+                        turns: isExpanded ? 0.5 : 0,
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOutCubic,
+                        child: Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          color: isExpanded ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ],
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: _wifiSsidController.text.trim().isNotEmpty
-                  ? () => _showQrPreview(_generateWifiString(), 'WIFI')
-                  : null,
-              icon: const Icon(Icons.qr_code_rounded),
-              label: const Text('Generate Wi-Fi QR Code'),
+            ),
+            AnimatedSize(
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeInOutCubic,
+              alignment: Alignment.topCenter,
+              child: isExpanded
+                  ? Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                      child: body,
+                    )
+                  : const SizedBox.shrink(),
             ),
           ],
         ),
       ),
-      isExpanded: _expandedIndex == 1,
-      canTapOnHeader: true,
-    );
-  }
-
-  ExpansionPanel _buildUpiPanel(ThemeData theme) {
-    return ExpansionPanel(
-      backgroundColor: theme.cardTheme.color,
-      headerBuilder: (BuildContext context, bool isExpanded) {
-        return const ListTile(
-          leading: Icon(Icons.account_balance_wallet_rounded),
-          title: Text('UPI Payment', style: TextStyle(fontWeight: FontWeight.w600)),
-        );
-      },
-      body: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              controller: _upiIdController,
-              onChanged: (_) => setState(() {}),
-              decoration: InputDecoration(
-                labelText: 'UPI ID (VPA)',
-                hintText: 'example@upi',
-                filled: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _upiNameController,
-              decoration: InputDecoration(
-                labelText: 'Payee Name (Optional)',
-                filled: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _upiAmountController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(
-                labelText: 'Amount (Optional)',
-                prefixText: '₹ ',
-                filled: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _upiNoteController,
-              decoration: InputDecoration(
-                labelText: 'Note (Optional)',
-                filled: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: _upiIdController.text.trim().isNotEmpty && _upiIdController.text.contains('@')
-                  ? () => _showQrPreview(_generateUpiString(), 'UPI')
-                  : null,
-              icon: const Icon(Icons.qr_code_rounded),
-              label: const Text('Generate UPI QR Code'),
-            ),
-          ],
-        ),
-      ),
-      isExpanded: _expandedIndex == 2,
-      canTapOnHeader: true,
     );
   }
 }
