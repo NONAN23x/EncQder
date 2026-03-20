@@ -14,16 +14,19 @@ EncQder was born from a need for a beautiful, simple, and private QR tool. It's 
 
 EncQder gives you three core tools in one swipeable interface:
 
-- **Create** — Generate custom-styled QR codes for plain Text/URLs, connectable **Wi-Fi Networks**, or **UPI Payments** using an elegant accordion UI.
-- **Scan** — Point your camera at any QR code to instantly read its content. The app auto-detects links to browse, and parses Wi-Fi codes to easily copy network passwords.
-- **History** — A reactive, persistent list of all your generated and scanned codes. All data is securely stored within your OS document directory so it survives app reinstalls, completely offline.
+- **Create** — Generate custom-styled QR codes for plain Text/URLs, connectable **Wi-Fi Networks**, or **UPI Payments** using an expressive, animated Material 3 UI. Autocomplete remembers your past UPI IDs to save time.
+- **Scan** — Point your camera at any QR code to instantly read its content, or effortlessly **Scan from Gallery**. The app auto-detects links to browse, and parses Wi-Fi codes to easily copy network passwords.
+- **History** — A reactive, persistent list of all your generated and scanned codes. Tap any code to view a beautiful fullscreen **Enlarged Preview**. All data is securely stored within your OS document directory so it survives app reinstalls, completely offline.
 - **Privacy-First** — All data is stored **locally on your device**. No network calls, no accounts, no tracking.
 
 ## Premium UX Features
 
+- **Expressive Material 3 Cards** — The Create and Settings screens feature bouncy, fluid card animations that morph corner radii, colors, and shadows as you interact with them.
+- **Hero Image Previews** — Seamlessly pop any QR code into a crisp, fullscreen overlay for easy scanning by another device.
+- **Native Splash Screens** — Elegant, typography-driven launch screens match your exact system theme instantly upon opening the app.
 - **Dynamic Material You QR Codes** — QR codes are rendered with a subtle radial gradient that pulls from your Android wallpaper's color palette, making it feel deeply native.
 - **Connected "Squircle" Aesthetics** — Finder patterns are rendered as continuous, smooth "squircle" shapes, and data modules are "airy" dots for a premium, modern feel.
-- **Fluid Navigation** — A custom "sliding pill" bottom nav that interpolates its position and style in real-time as you swipe between screens.
+- **Fluid Navigation** — A custom "sliding pill" bottom nav interpolates its position and style, and page transitions use slick circular reveals.
 - **Smart Contextual Actions** — The camera intelligently surfaces a "Visit" button for URLs, or a "Connect" dialog for Wi-Fi codes to view and copy network passwords effortlessly.
 - **Persistent Reactive Storage** — Your Home history dynamically updates in real-time. Uninstalling the app won't lose your data, thanks to native OS document directory storage and automatic backups.
 - **Smart Share Sheet** — An animated, blurred overlay with staggered action chips for one-tap sharing or saving to the device gallery.
