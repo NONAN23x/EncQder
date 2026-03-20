@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../services/storage_service.dart';
 import '../widgets/expandable_text_card.dart';
 import '../widgets/qr_display.dart';
@@ -495,6 +496,9 @@ class _InputScreenState extends State<InputScreen> with AutomaticKeepAliveClient
         TextField(
           controller: _upiAmountController,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*')),
+          ],
           decoration: InputDecoration(
             labelText: 'Amount (Optional)',
             prefixText: '₹ ',
