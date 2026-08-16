@@ -1,17 +1,35 @@
 import java.util.Properties
-import java.io.FileInputStream
-
-val keystorePropertiesFile = rootProject.file("key.properties")
-val keystoreProperties = Properties()
-if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
-}
 
 plugins {
     id("com.android.application")
-    id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    // The Flutter Gradle Plugin must be applied after the Android plugin.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+val keystorePropertiesFile = rootProject.file("key.properties")
+val keystoreProperties = Properties().apply {
+    if (keystorePropertiesFile.exists()) {
+        keystorePropertiesFile.inputStream().use(::load)
+    }
+}
+val requiredSigningProperties = listOf("storeFile", "storePassword", "keyAlias", "keyPassword")
+val missingSigningProperties = requiredSigningProperties.filter {
+    keystoreProperties.getProperty(it).isNullOrBlank()
+}
+if (keystorePropertiesFile.exists() && missingSigningProperties.isNotEmpty()) {
+    throw GradleException(
+        "android/key.properties requests release signing but is missing: " +
+            missingSigningProperties.joinToString(", "),
+    )
+}
+val hasReleaseSigning = keystorePropertiesFile.exists()
+val releaseKeystoreFile = if (hasReleaseSigning) {
+    rootProject.file(keystoreProperties.getProperty("storeFile"))
+} else {
+    null
+}
+if (releaseKeystoreFile != null && !releaseKeystoreFile.isFile) {
+    throw GradleException("Release keystore not found: ${releaseKeystoreFile.absolutePath}")
 }
 
 android {
@@ -24,16 +42,14 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
-    }
-
     signingConfigs {
-        create("release") {
-            keyAlias = keystoreProperties["keyAlias"] as String?
-            keyPassword = keystoreProperties["keyPassword"] as String?
-            storeFile = keystoreProperties["storeFile"]?.let { file(it as String) }
-            storePassword = keystoreProperties["storePassword"] as String?
+        if (hasReleaseSigning) {
+            create("release") {
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+                storeFile = releaseKeystoreFile
+                storePassword = keystoreProperties.getProperty("storePassword")
+            }
         }
     }
 
@@ -47,11 +63,42 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
 }
 
 flutter {
     source = "../.."
+}
+
+// Flutter keeps its conventional app-release.apk name for discovery. Keep
+// that file and provide a user-facing EncQder-named copy beside it.
+tasks.configureEach {
+    if (name == "assembleRelease") {
+        doLast {
+            val outputDirectory = layout.buildDirectory.dir("outputs/flutter-apk").get().asFile
+            // Flutter copies the finalized Gradle APK into flutter-apk only
+            // after assembleRelease returns, so read the current build from
+            // Gradle's APK directory rather than copying a stale prior output.
+            val defaultApk = layout.buildDirectory
+                .file("outputs/apk/release/app-release.apk")
+                .get()
+                .asFile
+            if (defaultApk.isFile) {
+                defaultApk.copyTo(
+                    outputDirectory.resolve("EncQder-release.apk"),
+                    overwrite = true,
+                )
+            }
+        }
+    }
 }

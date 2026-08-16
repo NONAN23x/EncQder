@@ -22,16 +22,13 @@ Thumbs.db
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
-.swiftpm/
 **/doc/api/
-**/ios/Flutter/.last_build_id
 
 # ─── Build outputs ──────────────────────────────────────────────────────────
 /build/
 /coverage/
 *.apk
 *.aab
-*.ipa
 app.*.symbols
 app.*.map.json
 

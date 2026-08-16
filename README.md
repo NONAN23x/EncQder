@@ -2,61 +2,79 @@
 
 # EncQder
 
-> A privacy-first, zero-friction QR tool that doesn't track you, built with a premium, gesture-first Flutter interface.
+EncQder is a private, offline-first QR code scanner and generator for Android. It creates text, Wi-Fi, and UPI QR codes, scans with the camera or an image, and keeps an on-device history in a Material 3 interface.
 
-*This project is **AI Vibe Coded**, built as a high-fidelity experiment to push the boundaries of [Antigravity](https://google.com) and assist with my personal utility workflows.*
+## Features
 
-## Why It Exists
+- Create QR codes for text and URLs, Wi-Fi credentials, and UPI payments.
+- Scan with the camera or choose an image from Android's system picker.
+- Keep, label, filter, share, and delete generated or scanned codes.
+- Import legacy EncQder ZIP backups and export versioned JSON backups.
+- Follow the Android system theme and Material You dynamic colors.
+- Work without accounts, ads, analytics, tracking, or app-originated network requests.
 
-EncQder was born from a need for a beautiful, simple, and private QR tool. It's a playground for premium Flutter UI patterns and a personal assistant for my daily digital organization.
+## Privacy and storage
 
-## What It Does
+History is stored as plaintext JSON in EncQder's app-private documents directory. Android's app sandbox restricts other apps from reading it, but EncQder does not add application-level encryption. Android cloud backup is disabled because QR history may contain sensitive content such as Wi-Fi credentials.
 
-EncQder gives you three core tools in one swipeable interface:
+Uninstalling EncQder normally removes its app-private data. Export a manual JSON backup before uninstalling, clearing app data, or moving devices. Imports and exports are always initiated by the user.
 
-- **Create** — Generate custom-styled QR codes for plain Text/URLs, connectable **Wi-Fi Networks**, or **UPI Payments** using an expressive, animated Material 3 UI. Autocomplete remembers your past UPI IDs to save time.
-- **Scan** — Point your camera at any QR code to instantly read its content, or effortlessly **Scan from Gallery**. The app auto-detects links to browse, and parses Wi-Fi codes to easily copy network passwords.
-- **History** — A reactive, persistent list of all your generated and scanned codes. Tap any code to view a beautiful fullscreen **Enlarged Preview**. All data is securely stored within your OS document directory so it survives app reinstalls, completely offline.
-- **Privacy-First** — All data is stored **locally on your device**. No network calls, no accounts, no tracking.
+Camera frames and chosen images are processed on-device. Opening a web or UPI link, sharing content, or saving an export hands that content to the Android app selected by the user. See [PRIVACY.md](PRIVACY.md) for the full data-handling description.
 
-## Premium UX Features
+## Requirements
 
-- **Expressive Material 3 Cards** — The Create and Settings screens feature bouncy, fluid card animations that morph corner radii, colors, and shadows as you interact with them.
-- **Hero Image Previews** — Seamlessly pop any QR code into a crisp, fullscreen overlay for easy scanning by another device.
-- **Native Splash Screens** — Elegant, typography-driven launch screens match your exact system theme instantly upon opening the app.
-- **Dynamic Material You QR Codes** — QR codes are rendered with a subtle radial gradient that pulls from your Android wallpaper's color palette, making it feel deeply native.
-- **Connected "Squircle" Aesthetics** — Finder patterns are rendered as continuous, smooth "squircle" shapes, and data modules are "airy" dots for a premium, modern feel.
-- **Fluid Navigation** — A custom "sliding pill" bottom nav interpolates its position and style, and page transitions use slick circular reveals.
-- **Smart Contextual Actions** — The camera intelligently surfaces a "Visit" button for URLs, or a "Connect" dialog for Wi-Fi codes to view and copy network passwords effortlessly.
-- **Persistent Reactive Storage** — Your Home history dynamically updates in real-time. Uninstalling the app won't lose your data, thanks to native OS document directory storage and automatic backups.
-- **Smart Share Sheet** — An animated, blurred overlay with staggered action chips for one-tap sharing or saving to the device gallery.
+- Flutter 3.47 stable (Dart 3.12+)
+- JDK 21
+- Android SDK 36 with NDK 28.2 and CMake 3.22.1
+- Android device or emulator running API 24 or newer
 
-## Getting Started
-
-### Prerequisites
-
-- [Flutter SDK](https://docs.flutter.dev/get-started/install) (3.x or later)
-- Android device or emulator (iOS support included)
-
-### Run Locally
+## Run locally
 
 ```bash
-git clone https://github.com/your-username/encqder.git
-cd encqder
+git clone https://github.com/NONAN23x/EncQder.git
+cd EncQder
 flutter pub get
 flutter run
 ```
 
-## Key Dependencies
+Run the same checks used by CI:
+
+```bash
+dart format --output=none --set-exit-if-changed .
+flutter analyze --fatal-infos
+flutter test --coverage
+GRADLE_OPTS=--enable-native-access=ALL-UNNAMED flutter build apk --debug
+cd android
+./gradlew :app:lintDebug
+```
+
+Flutter creates the local Gradle wrapper as part of the Android build, so run the APK build before invoking `./gradlew` in a fresh checkout.
+
+## Project structure
+
+```text
+lib/
+  app/       App startup, theme, and navigation
+  data/      Durable history and backup services
+  domain/    Typed QR models and payload codecs
+  features/  Create, scan, history, and settings UI
+  shared/    Reusable QR presentation and actions
+```
+
+The app deliberately uses constructor injection and `ChangeNotifier` rather than a state-management framework. Payload parsing and persistence live outside widgets so they can be tested as pure behavior.
+
+## Key dependencies
 
 | Package | Purpose |
 |---|---|
-| `pretty_qr_code` | Premium, stylized QR code rendering |
-| `mobile_scanner` | Camera-based QR scanning |
-| `shared_preferences` | Offline local storage |
-| `dynamic_color` | Material You OS theming support |
-| `intl` | Date/time formatting in history |
+| `pretty_qr_code` | QR rendering |
+| `mobile_scanner` | Camera and image QR scanning |
+| `file_selector` | Android system file selection |
+| `path_provider` | App-private file locations |
+| `shared_preferences` | Theme preference and legacy history migration |
+| `dynamic_color` | Material You colors |
+| `share_plus` | Android share sheet |
 
-## Roadmap
+For Android release and signing instructions, see [docs/ANDROID_RELEASE.md](docs/ANDROID_RELEASE.md). Current and planned work is tracked in [ROADMAP.md](ROADMAP.md).
 
-See [ROADMAP.md](./ROADMAP.md) for a detailed breakdown of completed features and what's planned next.
+No open-source license has been selected. Copyright remains with the repository owner unless a license is added later.

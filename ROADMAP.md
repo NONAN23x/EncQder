@@ -1,48 +1,50 @@
 # EncQder Roadmap
 
-## ✅ Version 1.0.4+6 (Current)
+## Version 1.1.0+8 — Android normalization
 
-### Expressive Material 3 UI & Fluidity
-- **Animated Expandable Cards**: Replaced rigid ExpansionPanels with expressive, rounded Material 3 cards featuring dynamic border radii, soft drop shadows, and bouncy height animations for the Create screen.
-- **Enlarged QR Previews**: Tapping any QR code now seamlessly expands it into a fullscreen, transparent `Hero` overlay with custom labeling and data type badges.
-- **Interactive Settings**: Redesigned the Settings screen with large, pill-shaped action cards, distinct destructive states, and a smooth circular reveal transition from the Home screen.
-- **Dynamic Empty States**: The Home screen now features a floating, elastic-scaled empty state icon to make the app feel alive even when no data is present.
+This release turns the original prototype into an Android-only application with explicit data and platform boundaries.
 
-### Advanced Capabilities & Quality of Life
-- **Smart UPI Suggestions**: The UPI generation form now remembers previously used IDs. Tapping the field reveals an autocomplete dropdown, complete with a "Forget" action that hides the suggestion without deleting the underlying history item.
-- **Gallery Scanning**: Users can now select and scan QR codes from existing images in their device gallery using a beautiful, frosted-glass floating button on the Camera screen.
-- **Native Splash Screens**: Replaced the default Flutter launch screen with elegant, typography-focused splash images for both light and dark themes using `flutter_native_splash`.
+### Reliability and privacy
 
-### Storage & Reactivity (Shipped March 19, 2026)
-- **Persistent File Storage**: Migrated off `SharedPreferences` to local JSON file storage within the application document directory, guaranteeing data survives app reinstalls using native OS backups.
-- **Reactive State Management**: Upgraded `StorageService` to a `ChangeNotifier`, ensuring the Home screen instantly reflects new scanned or generated items without requiring manual pull-to-refresh or tab toggling.
+- Versioned history and backup schema with typed QR kind and origin values.
+- Serialized, atomic history writes with backup recovery and corrupt-file quarantine.
+- Migration from legacy JSON and `SharedPreferences` history without discarding user labels or suggestion preferences.
+- Versioned JSON exports plus one-release compatibility with legacy ZIP imports.
+- Bounded imports with clear added, duplicate, and rejected counts.
+- Android cloud backup disabled; manual export is the supported device-migration path.
 
-### Expanded Generation & Discovery
-- **Wi-Fi & UPI Integration**: Users can generate explicit Wi-Fi connection codes (WPA/WEP/Open) and UPI payment codes alongside standard Text/URLs.
-- **Dynamic Action Overlays**: Rebuilt the camera scanning interface to auto-detect what is being scanned. 
-  - Text scans provide 'Discard' and 'Save'.
-  - URLs introduce a native 'Visit' button.
-  - Wi-Fi scans generate a 'Connect' button that safely extracts and copies network passwords for easy OS-level connection.
-- **Smart Data Tagging**: Added contextual badges (TEXT, WIFI, UPI) below the SCANNED/GENERATED tags in the Home list.
-- **Auto-Formatting Names**: The system now automatically assigns clean default labels based on the data type (e.g., "WIFI Code X", "UPI Code Y").
+### QR correctness and safety
 
-## ✅ Version 1.0.1 (Previous)
+- Shared Wi-Fi and UPI payload codecs with escaping, validation, and typed parsing.
+- Explicit allowlist for web and payment actions; unknown and dangerous URI schemes are not launched.
+- Standards-friendly QR quiet zones and shared screen/export rendering.
+- Wi-Fi results describe the available details instead of claiming to connect the device automatically.
 
-### Premium Aesthetics
-- **Material You QR Codes**: Replaced static blue QR colors with a subtle, dynamic radial gradient that pulls from the user's OS-level wallpaper theme (Android 12+).
-- **Connected Squircle Eyes**: Refined the QR finder patterns to be continuous, smooth "squircle" shapes, moving away from disconnected dots for a more premium, connected aesthetic.
+### Android and maintainability
 
-### System Integration & Theming
-- **Material You Dynamic Theming**: Configured the application to extract and apply OS-level dynamic color palettes on Android 12+ devices, while maintaining custom light/dark fallbacks.
-- **Focused Camera Scanner**: Restrained the `MobileScanner` barcode capture to a central, framed cutout.
+- Android-only Flutter 3.44.5 baseline with API 24 minimum and API 36 target.
+- AGP 9.0.1, Gradle 9.1.0, Kotlin 2.3.20, and JDK 21 build tooling.
+- Material `NavigationBar`, centralized theming, and lifecycle-aware camera behavior.
+- Feature-oriented code organization with constructor-injected history and backup services.
+- Latest compatible stable direct dependencies and removal of unused packages.
+- CI for formatting, fatal analysis, tests, Android lint, and a debug APK build.
+- Weekly dependency checks for Pub, Gradle, and GitHub Actions.
 
-### Premium UI & Fluidity
-- **Sliding Pill Navigation**: Replaced the static bottom nav with a custom "sliding pill" background that interpolates position and opacity during swiping.
+## Planned
 
-## 🔮 Planned (v1.1.0 and beyond)
+- [ ] Complete physical-device accessibility review with TalkBack and 200% font scaling.
+- [ ] Validate camera, gallery selection, sharing, UPI handoff, and gallery saving on API 24, 29, and 36 devices.
+- [ ] Complete Play Console data-safety declarations and store-listing assets.
+- [ ] Produce and validate the first signed release AAB with a protected upload key.
+- [ ] Consider contact, calendar, and map actions only after the core release is stable.
+- [ ] Remove legacy ZIP import after a documented migration window.
 
-### Next Up
-- [ ] **Play Store Release**: Complete final pre-launch security and compliance audits.
-- [ ] **Automated Testing**: Implement widget and integration tests to ensure core workflow stability.
-- [ ] **Continuous Batch Scanning**: Enable high-throughput scanning mode without returning to the home screen.
-- [ ] **QR Code Content Actions**: Add contextual buttons based on scanned content (e.g., "Add to Contacts", "Open in Maps").
+## Historical releases
+
+### Version 1.0.4
+
+- Added file-backed QR history, UPI suggestions, gallery scanning, native splash screens, Wi-Fi and UPI generation, and contextual scan actions.
+
+### Version 1.0.1
+
+- Added Material You colors, styled QR rendering, camera framing, and the original swipe navigation.

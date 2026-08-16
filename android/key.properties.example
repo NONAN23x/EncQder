@@ -1,0 +1,6 @@
+# Copy this file to android/key.properties and replace every placeholder.
+# Keep the real file and keystore outside version control.
+storeFile=/absolute/path/to/encqder-upload-keystore.jks
+storePassword=replace-me
+keyAlias=upload
+keyPassword=replace-me
